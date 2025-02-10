@@ -1,7 +1,7 @@
 import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client/core';
 
 const httpLink = createHttpLink({
-    uri: 'https://your-graphql-api.com/graphql', // Thay bằng API của bạn
+    uri: 'https://flash-card-backend-w9oj.onrender.com/graphql',
 });
 
 const apolloClient = new ApolloClient({
