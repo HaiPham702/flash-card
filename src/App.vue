@@ -10,7 +10,7 @@
       <v-app-bar title="Application bar"></v-app-bar>
 
       <v-main class="d-flex align-center justify-center" style="min-height: 300px">
-        Main Content
+        Love you 3000 times "Thuy Duong ❤️❤️❤️"
       </v-main>
     </v-layout>
   </div>
