@@ -2,12 +2,25 @@
   <div class="deck-list">
     <div class="header">
       <h1>Bộ thẻ của bạn</h1>
-      <button @click="showCreateDeckModal = true" class="create-button">
+      <button @click="showCreateDeckModal = true" class="create-button" :disabled="isLoading">
         <i class="fas fa-plus"></i> Tạo bộ thẻ mới
       </button>
     </div>
 
-    <div class="decks-grid">
+    <div v-if="isLoading" class="loading-container">
+      <div class="loading-spinner"></div>
+      <p>Đang tải bộ thẻ...</p>
+    </div>
+
+    <div v-else-if="decks.length === 0" class="empty-state">
+      <i class="fas fa-folder-open"></i>
+      <p>Bạn chưa có bộ thẻ nào</p>
+      <button @click="showCreateDeckModal = true" class="create-button">
+        <i class="fas fa-plus"></i> Tạo bộ thẻ đầu tiên
+      </button>
+    </div>
+
+    <div v-else class="decks-grid">
       <div v-for="(deck, index) in decks" :key="`${deck._id}-${index}`" class="deck-card">
         <div class="deck-info">
           <h3>{{ deck.name }}</h3>
@@ -57,11 +70,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useDeckStore } from '@/stores/deck'
 const store = useDeckStore()
 const showCreateDeckModal = ref(false)
-const isLoading = ref(false)
+const isLoading = ref(true)
 const newDeck = ref({
   name: '',
   description: ''
@@ -78,6 +91,9 @@ const fetchDecks = async () => {
   }
 }
 
+onMounted(() => {
+  fetchDecks()
+})
 
 const createDeck = async () => {
   isLoading.value = true
@@ -272,5 +288,47 @@ const createDeck = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 1rem;
+}
+
+.loading-container .loading-spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid #f3f4f6;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 1rem;
+  color: #666;
+}
+
+.empty-state i {
+  font-size: 3rem;
+  color: #6366f1;
+}
+
+.empty-state p {
+  font-size: 1.1rem;
+}
+
+.create-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 </style>
