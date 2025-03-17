@@ -8,14 +8,15 @@
       <div class="header-actions">
         <router-link :to="deck.cards.length > 0 ? '/study/' + deckId : ''" class="study-button"
           :class="{ 'disabled': deck.cards.length === 0 }" @click.prevent="deck.cards.length === 0 ? null : null">
-           Học ngay
+          <i class="fa-solid fa-play"></i>
+          Học ngay
           <span v-if="deck.cards.length === 0" class="tooltip">Thêm thẻ để bắt đầu học</span>
         </router-link>
         <button @click="showAddCardModal = true" class="add-button">
           <i class="fas fa-plus"></i> Thêm thẻ mới
         </button>
         <button @click="deleteDeck" class="delete-deck-button">
-          <i class="fa-solid fa-square-minus"></i> Xóa bộ thẻ
+          <i class="fa-solid fa-trash"></i> Xóa bộ thẻ
         </button>
       </div>
     </div>
@@ -39,7 +40,7 @@
             <i class="fas fa-edit"></i>
           </button>
           <button @click="deleteCard(card.id)" class="delete-button">
-            <i class="fa-solid fa-square-minus"></i>
+            <i class="fa-solid fa-trash"></i>
           </button>
         </div>
       </div>
@@ -199,9 +200,10 @@ const saveCard = async () => {
     id: '',
     front: currentCard.value.front,
     back: currentCard.value.back,
-    image: selectedImage.value || undefined,
+    image: selectedImage.value || '',
     level: 1
   }
+
 
   if (editingCard.value) {
     await store.updateCard(deckId, editingCard.value.id, cardData)

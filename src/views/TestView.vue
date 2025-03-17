@@ -4,7 +4,7 @@
       <h3>Danh sách câu hỏi</h3>
       <div class="questions-list">
         <button v-for="(card, index) in deck?.cards" :key="card.id" class="question-item" :class="{
-          'current': currentQuestionIndex === index,
+          'current': currentQuestionIndex === index && !showResults,
           'answered': answers[index],
           'correct': showResults && questionScores[index] === 1,
           'incorrect': showResults && questionScores[index] === 0
@@ -25,7 +25,7 @@
         <h1>Kiểm tra - {{ deck?.name }}</h1>
         <div class="header-actions">
           <router-link :to="'/deck/' + deckId" class="back-button">
-            <i class="fa-solid fa-circle-left"></i> Quay lại bộ thẻ
+            <i class="fa-solid fa-backward-step"></i> Quay lại bộ thẻ
           </router-link>
         </div>
       </div>
