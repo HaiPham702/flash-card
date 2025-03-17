@@ -16,7 +16,7 @@ jobs:
       - name: Install Dependencies
         run: npm install
       - name: Build App
-        run: npm run build -- --base=/flash-card-ui/
+        run: npm run build -- --base=/flash-card/
       - name: Archive artifact
         shell: sh
         run: |
