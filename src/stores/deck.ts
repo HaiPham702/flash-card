@@ -29,7 +29,7 @@ export const useDeckStore = defineStore('deck', () => {
     const decks = ref<Deck[]>([])
     const isLoading = ref(false)
     const error = ref<string | null>(null)
-    const API_URL = 'http://localhost:4000/api' // Thay đổi URL API của bạn
+    const API_URL = 'https://flash-card-backend-w9oj.onrender.com/api' // Thay đổi URL API của bạn
 
     // Getters
     const getDeckById = computed(() => {
