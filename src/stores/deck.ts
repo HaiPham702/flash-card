@@ -20,6 +20,8 @@ export interface Deck {
     id: any
     name: string
     description: string
+    totalCards: number
+    dueCards: number
     cards: Card[]
 }
 
@@ -55,9 +57,9 @@ export const useDeckStore = defineStore('deck', () => {
             const response = await axios.get(`${API_URL}/decks`)
             decks.value = response.data
         } catch (err) {
-            const error = err as AxiosError
-            error.value = error.message || 'Failed to fetch decks'
-            console.error('Error fetching decks:', error)
+            const errorRes = err as AxiosError
+            error.value = errorRes.message || 'Failed to fetch decks'
+            console.error('Error fetching decks:', errorRes)
         } finally {
             isLoading.value = false
         }
@@ -178,9 +180,9 @@ export const useDeckStore = defineStore('deck', () => {
                 }
             }
         } catch (err) {
-            const error = err as AxiosError
-            error.value = error.message || 'Failed to update card review'
-            console.error('Error updating card review:', error)
+            const errorRes = err as AxiosError
+            error.value = errorRes.message || 'Failed to update card review'
+            console.error('Error updating card review:', errorRes)
         } finally {
             isLoading.value = false
         }

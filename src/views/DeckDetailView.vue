@@ -6,12 +6,8 @@
         <p>{{ deck.description }}</p>
       </div>
       <div class="header-actions">
-        <router-link 
-          :to="deck.cards.length > 0 ? '/study/' + deckId : ''"
-          class="study-button"
-          :class="{ 'disabled': deck.cards.length === 0 }"
-          @click.prevent="deck.cards.length === 0 ? null : null"
-        >
+        <router-link :to="deck.cards.length > 0 ? '/study/' + deckId : ''" class="study-button"
+          :class="{ 'disabled': deck.cards.length === 0 }" @click.prevent="deck.cards.length === 0 ? null : null">
           <i class="fas fa-play"></i> Học ngay
           <span v-if="deck.cards.length === 0" class="tooltip">Thêm thẻ để bắt đầu học</span>
         </router-link>
@@ -56,35 +52,21 @@
         <form @submit.prevent="saveCard">
           <div class="form-group">
             <label>Mặt trước:</label>
-            <input
-              v-model="currentCard.front"
-              type="text"
-              placeholder="Nhập nội dung mặt trước..."
-              class="form-input"
-              required
-            >
+            <input v-model="currentCard.front" type="text" placeholder="Nhập nội dung mặt trước..." class="form-input"
+              required>
           </div>
 
           <div class="form-group">
             <label>Mặt sau:</label>
-            <textarea
-              v-model="currentCard.back"
-              rows="3"
-              placeholder="Nhập nội dung mặt sau..."
-              class="form-textarea"
-              required
-            ></textarea>
+            <textarea v-model="currentCard.back" rows="3" placeholder="Nhập nội dung mặt sau..." class="form-textarea"
+              required></textarea>
           </div>
 
           <div class="form-group">
             <label>Hình ảnh</label>
             <div class="image-search">
-              <input 
-                v-model="searchQuery" 
-                @input="searchImages" 
-                placeholder="Tìm kiếm hình ảnh..."
-                class="image-search-input"
-              >
+              <input v-model="searchQuery" @input="searchImages" placeholder="Tìm kiếm hình ảnh..."
+                class="image-search-input">
 
               <div v-if="selectedImage" class="selected-image">
                 <img :src="selectedImage" alt="Selected image">
@@ -126,7 +108,8 @@ import { useDeckStore } from '@/stores/deck'
 import axios from 'axios'
 
 interface Card {
-  id: string
+  _id: any
+  id: any
   front: string
   back: string
   image?: string
@@ -177,6 +160,7 @@ const initData = async () => {
       name: foundDeck.name || '',
       description: foundDeck.description || '',
       cards: foundDeck.cards.map(card => ({
+        _id: card._id || '',
         id: card._id || '',
         front: card.front,
         back: card.back,
@@ -211,9 +195,12 @@ const cancelEdit = () => {
 
 const saveCard = async () => {
   const cardData: Card = {
+    _id: '',
+    id: '',
     front: currentCard.value.front,
     back: currentCard.value.back,
-    image: selectedImage.value || undefined
+    image: selectedImage.value || undefined,
+    level: 1
   }
 
   if (editingCard.value) {
