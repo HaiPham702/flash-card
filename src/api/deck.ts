@@ -1,6 +1,6 @@
 import type { Card, Deck } from '@/stores/deck'
 
-const API_URL = 'https://flash-card-backend-w9oj.onrender.com/api'
+const API_URL = import.meta.env.MODE == "development" ? 'http://localhost:4000/api' : 'https://flash-card-backend-w9oj.onrender.com/api'
 
 export async function getAllDecks(): Promise<Deck[]> {
     const response = await fetch(`${API_URL}/decks`)

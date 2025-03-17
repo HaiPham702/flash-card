@@ -8,7 +8,7 @@
     </div>
 
     <div class="decks-grid">
-      <div v-for="deck in decks" :key="deck.id" class="deck-card">
+      <div v-for="(deck, index) in decks" :key="`${deck._id}-${index}`" class="deck-card">
         <div class="deck-info">
           <h3>{{ deck.name }}</h3>
           <p>{{ deck.description }}</p>
@@ -160,7 +160,8 @@ const createDeck = async () => {
   margin-top: 1.5rem;
 }
 
-.study-button, .edit-button {
+.study-button,
+.edit-button {
   flex: 1;
   padding: 0.5rem;
   border-radius: 0.5rem;
@@ -272,4 +273,4 @@ const createDeck = async () => {
   align-items: center;
   justify-content: center;
 }
-</style> 
+</style>
