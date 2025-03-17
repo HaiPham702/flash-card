@@ -5,6 +5,7 @@ import axios from 'axios'
 import type { AxiosError } from 'axios'
 
 export interface Card {
+    _id: any
     id: any
     front: string
     back: string
@@ -15,6 +16,7 @@ export interface Card {
 }
 
 export interface Deck {
+    _id: any
     id: any
     name: string
     description: string
