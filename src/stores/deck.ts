@@ -195,7 +195,7 @@ export const useDeckStore = defineStore('deck', () => {
         try {
             const response = await axios.get<Deck>(`${API_URL}/decks/${id}`)
             // Thêm deck vào state nếu chưa có
-            const existingDeckIndex = decks.value.findIndex(d => d.id === id)
+            const existingDeckIndex = decks.value.findIndex(d => d._id === id || d.id === id)
             if (existingDeckIndex === -1) {
                 decks.value.push(response.data)
             } else {
