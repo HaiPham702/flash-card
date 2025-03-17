@@ -13,13 +13,13 @@
           <h3>{{ deck.name }}</h3>
           <p>{{ deck.description }}</p>
           <div class="deck-stats">
-            <span><i class="fas fa-layer-group"></i> {{ deck.totalCards }} thẻ</span>
+            <span><i class="fa-solid fa-circle-play"></i> {{ deck.cards.length }} thẻ</span>
             <span><i class="fas fa-clock"></i> {{ deck.dueCards }} thẻ cần ôn tập</span>
           </div>
         </div>
         <div class="deck-actions">
           <router-link :to="'/study/' + deck._id" class="study-button">
-            <i class="fas fa-play"></i> Học ngay
+            Học ngay
           </router-link>
           <router-link :to="'/deck/' + deck._id" class="edit-button">
             <i class="fas fa-edit"></i> Chỉnh sửa

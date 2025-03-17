@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import TheWelcome from '../components/TheWelcome.vue'
 </script>
 
 <template>
   <div class="home">
     <div class="hero">
-      <h1>Anki Clone</h1>
-      <p>Học từ vựng hiệu quả với phương pháp spaced repetition</p>
+      <h1>Flash Card</h1>
       <router-link to="/decks" class="cta-button">
         Bắt đầu học ngay
       </router-link>

@@ -5,7 +5,7 @@ import { RouterLink, RouterView } from 'vue-router'
 <template>
   <nav class="navbar">
     <router-link to="/" class="logo">
-      Anki Clone
+      Flash Card
     </router-link>
     <div class="nav-links">
       <router-link to="/decks">Bộ thẻ</router-link>
@@ -17,7 +17,7 @@ import { RouterLink, RouterView } from 'vue-router'
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css') crossorigin="anonymous";
 
 :root {
   --primary-color: #6366f1;

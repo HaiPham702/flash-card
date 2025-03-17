@@ -25,7 +25,7 @@
         <h1>Kiểm tra - {{ deck?.name }}</h1>
         <div class="header-actions">
           <router-link :to="'/deck/' + deckId" class="back-button">
-            <i class="fas fa-arrow-left"></i> Quay lại bộ thẻ
+            <i class="fa-solid fa-circle-left"></i> Quay lại bộ thẻ
           </router-link>
         </div>
       </div>
