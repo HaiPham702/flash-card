@@ -32,6 +32,17 @@ export const useDeckStore = defineStore('deck', () => {
     import.meta.env.VITE_API_URL
     const API_URL = import.meta.env.MODE == "development" ? 'http://localhost:4000/api' : 'https://flash-card-backend-w9oj.onrender.com/api'
 
+    // Helper to get auth headers
+    const getAuthHeaders = () => {
+        const token = localStorage.getItem('token')
+        return token ? {
+            'Content-Type': 'application/json',
+            'x-auth-token': token
+        } : {
+            'Content-Type': 'application/json'
+        }
+    }
+
     // Getters
     const getDeckById = computed(() => {
         return (id: any) => decks.value.find(d => d.id === id || d._id === id)
@@ -55,8 +66,8 @@ export const useDeckStore = defineStore('deck', () => {
         isLoading.value = true
         error.value = null
         try {
-            const response = await axios.get(`${API_URL}/decks`)
-            decks.value = response.data
+            // Use apiRequest instead
+            decks.value = await api.getAllDecks()
         } catch (err) {
             const errorRes = err as AxiosError
             error.value = errorRes.message || 'Failed to fetch decks'
@@ -169,7 +180,9 @@ export const useDeckStore = defineStore('deck', () => {
         isLoading.value = true
         error.value = null
         try {
-            await axios.patch(`${API_URL}/decks/${deckId}/cards/${cardId}`, updates)
+            await axios.patch(`${API_URL}/decks/${deckId}/cards/${cardId}`, updates, {
+                headers: getAuthHeaders()
+            })
             // Cập nhật state local
             const deck = decks.value.find(d => d.id === deckId)
             if (deck) {
@@ -193,15 +206,15 @@ export const useDeckStore = defineStore('deck', () => {
         isLoading.value = true
         error.value = null
         try {
-            const response = await axios.get<Deck>(`${API_URL}/decks/${id}`)
+            const data = await api.getDeck(id);
             // Thêm deck vào state nếu chưa có
             const existingDeckIndex = decks.value.findIndex(d => d._id === id || d.id === id)
             if (existingDeckIndex === -1) {
-                decks.value.push(response.data)
+                decks.value.push(data)
             } else {
-                decks.value[existingDeckIndex] = response.data
+                decks.value[existingDeckIndex] = data
             }
-            return response.data
+            return data
         } catch (err) {
             console.error('Error fetching deck:', err)
             error.value = err instanceof Error ? err.message : 'Failed to fetch deck'
