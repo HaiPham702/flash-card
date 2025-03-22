@@ -36,7 +36,9 @@ const handleLogout = () => {
       </template>
       <template v-else>
         <router-link to="/login" class="login-button">
-          Đăng nhập
+          <div style="color: white;">
+            Đăng nhập
+          </div>
         </router-link>
       </template>
     </div>

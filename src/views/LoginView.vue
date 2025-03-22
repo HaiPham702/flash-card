@@ -1,21 +1,37 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useNotificationStore } from '../stores/notification'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const notificationStore = useNotificationStore()
 
 const email = ref('')
 const password = ref('')
 const error = ref('')
+const isLoading = ref(false)
+
+// Clear error message when user starts typing
+watch([email, password], () => {
+    if (error.value) {
+        error.value = ''
+    }
+})
 
 const handleLogin = async () => {
+    error.value = ''
     try {
+        isLoading.value = true
         await authStore.login(email.value, password.value)
+        notificationStore.success('Đăng nhập thành công')
         router.push('/')
     } catch (err) {
         error.value = 'Email hoặc mật khẩu không chính xác'
+        notificationStore.error('Email hoặc mật khẩu không chính xác')
+    } finally {
+        isLoading.value = false
     }
 }
 </script>
@@ -27,18 +43,20 @@ const handleLogin = async () => {
             <form @submit.prevent="handleLogin">
                 <div class="form-group">
                     <label for="email">Email</label>
-                    <input type="email" id="email" v-model="email" required placeholder="Nhập email của bạn" />
+                    <input type="email" id="email" v-model="email" required placeholder="Nhập email của bạn"
+                        :disabled="isLoading" />
                 </div>
                 <div class="form-group">
                     <label for="password">Mật khẩu</label>
-                    <input type="password" id="password" v-model="password" required
-                        placeholder="Nhập mật khẩu của bạn" />
+                    <input type="password" id="password" v-model="password" required placeholder="Nhập mật khẩu của bạn"
+                        :disabled="isLoading" />
                 </div>
                 <div v-if="error" class="error-message">
                     {{ error }}
                 </div>
-                <button type="submit" class="login-button">
-                    Đăng nhập
+                <button type="submit" class="login-button" :disabled="isLoading">
+                    <span v-if="isLoading" class="loader"></span>
+                    <span v-else>Đăng nhập</span>
                 </button>
                 <div class="register-link">
                     Chưa có tài khoản? <router-link to="/register">Đăng ký</router-link>
@@ -96,6 +114,11 @@ input:focus {
     box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
 }
 
+input:disabled {
+    background-color: #f9fafb;
+    cursor: not-allowed;
+}
+
 .error-message {
     color: #ef4444;
     margin-bottom: 1rem;
@@ -113,10 +136,18 @@ input:focus {
     font-weight: 500;
     cursor: pointer;
     transition: background-color 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .login-button:hover {
     background-color: #4f46e5;
+}
+
+.login-button:disabled {
+    background-color: #a5b4fc;
+    cursor: not-allowed;
 }
 
 .register-link {
@@ -131,5 +162,26 @@ input:focus {
 
 .register-link a:hover {
     text-decoration: underline;
+}
+
+.loader {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #ffffff;
+    border-bottom-color: transparent;
+    border-radius: 50%;
+    display: inline-block;
+    box-sizing: border-box;
+    animation: rotation 1s linear infinite;
+}
+
+@keyframes rotation {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 </style>
