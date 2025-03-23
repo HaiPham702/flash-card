@@ -1,5 +1,9 @@
 import { apiRequest } from './index'
 
-export async function generateSuggestions(prompt: string): Promise<string[]> {
+interface AIResponse {
+    response: string;
+}
+
+export async function generateSuggestions(prompt: string): Promise<AIResponse> {
     return apiRequest('/ai/generate', 'POST', { prompt })
 } 

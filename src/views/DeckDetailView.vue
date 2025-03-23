@@ -54,7 +54,7 @@
           <div class="form-group">
             <label>Mặt trước:</label>
             <input v-model="currentCard.front" type="text" placeholder="Nhập nội dung mặt trước..." class="form-input"
-              @input="fetchAISuggestions($event.target.value)" required>
+              @input="fetchAISuggestions(currentCard.front)" required>
           </div>
 
           <div class="form-group">
@@ -306,8 +306,11 @@ const fetchAISuggestions = async (frontContent: string) => {
     try {
       let prompt = `Nghĩa của từ: ${frontContent} ngắn gọn chỉ bao gồn định nghĩa không chứa từ đó trong câu trả lời`
 
-      const result = await generateSuggestions(prompt)
-      aiSuggestions.value = [result.response]
+      interface AIResponse {
+        response: string;
+      }
+      const result = await generateSuggestions(prompt) as AIResponse;
+      aiSuggestions.value = result?.response ? [result.response] : [];
       showSuggestions.value = true
     } catch (error) {
       console.error('Error fetching AI suggestions:', error)
