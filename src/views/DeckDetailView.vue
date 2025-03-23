@@ -54,13 +54,35 @@
           <div class="form-group">
             <label>Mặt trước:</label>
             <input v-model="currentCard.front" type="text" placeholder="Nhập nội dung mặt trước..." class="form-input"
-              required>
+              @input="fetchAISuggestions($event.target.value)" required>
           </div>
 
           <div class="form-group">
             <label>Mặt sau:</label>
-            <textarea v-model="currentCard.back" rows="3" placeholder="Nhập nội dung mặt sau..." class="form-textarea"
-              required></textarea>
+            <div class="back-content-container">
+              <textarea v-model="currentCard.back" rows="3" placeholder="Nhập nội dung mặt sau..." class="form-textarea"
+                required></textarea>
+
+              <div v-if="isLoadingSuggestions" class="suggestions-loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>Đang tạo gợi ý...</span>
+              </div>
+
+              <div v-if="showSuggestions && aiSuggestions.length > 0" class="suggestions-dropdown">
+                <div class="suggestions-header">
+                  <span>Gợi ý từ AI:</span>
+                  <button type="button" @click="showSuggestions = false" class="close-suggestions">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+                <div class="suggestions-list">
+                  <div v-for="(suggestion, index) in aiSuggestions" :key="index" class="suggestion-item"
+                    @click="selectSuggestion(suggestion)">
+                    {{ suggestion }}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="form-group">
@@ -107,6 +129,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDeckStore } from '@/stores/deck'
 import axios from 'axios'
+import { generateSuggestions } from '@/api/ai'
 
 interface Card {
   _id: any
@@ -131,6 +154,11 @@ const currentCard = ref({
   back: '',
   image: ''
 })
+
+const aiSuggestions = ref<string[]>([])
+const isLoadingSuggestions = ref(false)
+const showSuggestions = ref(false)
+const suggestionTimeout = ref<number | null>(null)
 
 const deck = ref<{
   id: string
@@ -261,6 +289,37 @@ const searchImages = async (event?: Event) => {
 const selectImage = (imageUrl: string) => {
   selectedImage.value = imageUrl
   isSearchingImages.value = false
+}
+
+const fetchAISuggestions = async (frontContent: string) => {
+  if (!frontContent.trim()) {
+    aiSuggestions.value = []
+    return
+  }
+
+  if (suggestionTimeout.value) {
+    clearTimeout(suggestionTimeout.value)
+  }
+
+  isLoadingSuggestions.value = true
+  suggestionTimeout.value = window.setTimeout(async () => {
+    try {
+      let prompt = `Nghĩa của từ: ${frontContent} ngắn gọn chỉ bao gồn định nghĩa không chứa từ đó trong câu trả lời`
+
+      const result = await generateSuggestions(prompt)
+      aiSuggestions.value = [result.response]
+      showSuggestions.value = true
+    } catch (error) {
+      console.error('Error fetching AI suggestions:', error)
+    } finally {
+      isLoadingSuggestions.value = false
+    }
+  }, 700)
+}
+
+const selectSuggestion = (suggestion: string) => {
+  currentCard.value.back = suggestion
+  showSuggestions.value = false
 }
 
 initData()
@@ -742,5 +801,91 @@ initData()
   .selected-image img {
     height: 80px;
   }
+}
+
+.back-content-container {
+  position: relative;
+  width: 100%;
+}
+
+.suggestions-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  margin-top: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  z-index: 10;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.suggestions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.suggestions-header span {
+  font-weight: 500;
+  color: #374151;
+}
+
+.close-suggestions {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+}
+
+.close-suggestions:hover {
+  background-color: #e5e7eb;
+  color: #374151;
+}
+
+.suggestions-list {
+  padding: 0.5rem 0;
+}
+
+.suggestion-item {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.suggestion-item:hover {
+  background-color: #f3f4f6;
+}
+
+.suggestions-loading {
+  position: absolute;
+  right: 1rem;
+  top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6366f1;
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+}
+
+.suggestions-loading i {
+  font-size: 1rem;
+}
+
+.suggestions-loading span {
+  font-size: 0.875rem;
 }
 </style>
