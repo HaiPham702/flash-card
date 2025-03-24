@@ -43,6 +43,8 @@ export const useAuthStore = defineStore('auth', {
             this.user = null
             localStorage.removeItem('token')
             localStorage.removeItem('user')
+            // Clear any other auth-related data if needed
+            sessionStorage.clear()
         },
 
         // Initialize auth state from localStorage

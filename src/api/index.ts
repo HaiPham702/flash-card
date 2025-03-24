@@ -1,5 +1,6 @@
 const API_URL = import.meta.env.MODE == "development" ? 'http://localhost:4000/api' : 'https://flash-card-backend-w9oj.onrender.com/api';
 import router from '../router';
+import { useNotificationStore } from '../stores/notification';
 
 interface RequestOptions extends RequestInit {
     token?: string | null;
@@ -42,6 +43,10 @@ export async function apiRequest(
         // Clear auth data directly from localStorage
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+
+        // Show notification
+        const notificationStore = useNotificationStore();
+        notificationStore.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
 
         // Redirect to login
         router.push('/login');

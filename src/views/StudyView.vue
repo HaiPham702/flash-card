@@ -169,7 +169,9 @@ const rateCard = (rating: number) => {
   })
 
   showAnswer.value = false
-  currentCardIndex.value++
+  if (currentCardIndex.value < deck.value?.cards.length) {
+    currentCardIndex.value++
+  }
 }
 
 const restartStudy = () => {

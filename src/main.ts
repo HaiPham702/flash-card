@@ -19,12 +19,13 @@ app.config.errorHandler = (error: any, instance, info) => {
     const authStore = useAuthStore()
     const notificationStore = useNotificationStore()
 
-    // If there's a 401 Unauthorized error, log the user out
+    // If there's a 401 Unauthorized error or authentication-related error
     if (error.message && (
         error.message.includes('401') ||
         error.message.toLowerCase().includes('unauthorized') ||
         error.message.toLowerCase().includes('token is not valid') ||
-        error.message.toLowerCase().includes('token has expired')
+        error.message.toLowerCase().includes('token has expired') ||
+        error.message.toLowerCase().includes('please log in again')
     )) {
         console.error('Authentication error, logging out:', error)
 
