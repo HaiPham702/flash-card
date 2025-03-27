@@ -273,7 +273,7 @@ const searchImages = async (event?: Event) => {
       const params = {
         client_id: UNSPLASH_API_KEY,
         query: encodeURIComponent(searchQuery.value),
-        per_page: 10,
+        per_page: 9,
         page: 1
       }
       const response = await axios.get(VITE_UNSPLASH_LINK, { params })
