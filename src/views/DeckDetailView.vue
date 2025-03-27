@@ -304,7 +304,7 @@ const fetchAISuggestions = async (frontContent: string) => {
   isLoadingSuggestions.value = true
   suggestionTimeout.value = window.setTimeout(async () => {
     try {
-      let prompt = `Nghĩa của từ: ${frontContent} ngắn gọn chỉ bao gồn định nghĩa không chứa từ đó trong câu trả lời`
+      let prompt = `Nghĩa của từ: ${frontContent} ngắn gọn chỉ bao gồm định nghĩa không chứa từ đó trong câu trả lời`
 
       interface AIResponse {
         response: string;
@@ -312,6 +312,10 @@ const fetchAISuggestions = async (frontContent: string) => {
       const result = await generateSuggestions(prompt) as AIResponse;
       aiSuggestions.value = result?.response ? [result.response] : [];
       showSuggestions.value = true
+
+      // Tự động tìm kiếm ảnh
+      searchQuery.value = frontContent
+      await searchImages()
     } catch (error) {
       console.error('Error fetching AI suggestions:', error)
     } finally {
