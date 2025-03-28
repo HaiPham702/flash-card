@@ -610,7 +610,7 @@ initStudy()
 
 .completion-message {
   text-align: center;
-  padding: 4rem 0;
+  padding: 2rem 0;
   opacity: 0;
   transform: scale(0.8);
   transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -842,30 +842,93 @@ initStudy()
 .completion-content {
   text-align: center;
   padding: 3rem;
-  background: white;
+  background: linear-gradient(45deg, #fbbf24, #f59e0b);
   border-radius: 1rem;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
+  animation: gradient-shift 3s ease infinite;
+  color: white;
+}
+
+@keyframes gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .completion-title {
   position: relative;
   margin-bottom: 2rem;
+  color: white;
+}
+
+.completion-title h2 {
+  font-size: 2.5rem;
+  font-weight: bold;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.completion-stats {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin: 2rem 0;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 0.5rem;
+  backdrop-filter: blur(5px);
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: white;
+  font-weight: 500;
+}
+
+.stat-item i {
+  color: white;
+  font-size: 1.25rem;
+}
+
+.completion-message p {
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 2rem;
+  font-size: 1.2rem;
+}
+
+.back-button {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  text-decoration: none;
+  backdrop-filter: blur(5px);
+}
+
+.back-button:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-2px);
 }
 
 .completion-icon {
   font-size: 5rem;
-  color: #fbbf24;
   margin-bottom: 1rem;
   animation: bounce 1s ease infinite;
   text-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .completion-icon i {
-  background: linear-gradient(45deg, #fbbf24, #f59e0b);
+  background: linear-gradient(45deg, #ffffff, #e2e8f0);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
 .confetti-container {
@@ -906,81 +969,11 @@ initStudy()
   }
 }
 
-.completion-stats {
-  display: flex;
-  justify-content: center;
-  gap: 2rem;
-  margin: 2rem 0;
-  padding: 1rem;
-  background: #f8fafc;
-  border-radius: 0.5rem;
-}
-
-.stat-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #374151;
-  font-weight: 500;
-}
-
-.stat-item i {
-  color: #6366f1;
-  font-size: 1.25rem;
-}
-
 .completion-actions {
   display: flex;
   gap: 1rem;
   justify-content: center;
   margin-top: 2rem;
-}
-
-.back-button,
-.restart-button {
-  padding: 1rem 2rem;
-  border-radius: 0.5rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: all 0.2s ease;
-  font-size: 1.1rem;
-}
-
-.back-button {
-  background-color: #f3f4f6;
-  color: #374151;
-  text-decoration: none;
-}
-
-.back-button:hover {
-  background-color: #e5e7eb;
-  transform: translateY(-2px);
-}
-
-.restart-button {
-  background-color: #6366f1;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
-
-.restart-button:hover {
-  background-color: #4f46e5;
-  transform: translateY(-2px);
-}
-
-@keyframes bounce {
-
-  0%,
-  100% {
-    transform: translateY(0) scale(1);
-  }
-
-  50% {
-    transform: translateY(-20px) scale(1.1);
-  }
 }
 
 .study-status-buttons {
