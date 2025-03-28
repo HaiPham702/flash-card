@@ -3,6 +3,9 @@
     <div class="header">
       <h1>{{ deck?.name }}</h1>
       <div class="header-actions">
+        <button @click="resetAllCards" class="reset-button">
+          <i class="fas fa-redo"></i> Học lại từ đầu
+        </button>
         <router-link :to="'/test/' + deckId" class="test-button">
           <i class="fas fa-pencil-alt"></i> Làm bài kiểm tra
         </router-link>
@@ -19,9 +22,9 @@
 
     <template v-else-if="deck">
       <div class="progress">
-        <span>{{ currentCardIndex + 1 }}/{{ deck.cards.length }}</span>
+        <span>{{ currentCardIndex >= learningCardsCount ? learningCardsCount : currentCardIndex + 1 }}/{{ learningCardsCount }}</span>
         <div class="progress-bar">
-          <div class="progress-fill" :style="{ width: `${((currentCardIndex + 1) / deck.cards.length) * 100}%` }">
+          <div class="progress-fill" :style="{ width: `${((currentCardIndex + 1) / learningCardsCount) * 100}%` }">
           </div>
         </div>
       </div>
@@ -54,13 +57,8 @@
             transition: isDragging ? 'none' : 'all 0.3s ease'
           }"
           @click="showAnswer = !showAnswer"
-          @mousedown="handleMouseDown"
-          @mousemove="handleMouseMove"
-          @mouseup="handleMouseUp"
-          @mouseleave="handleMouseUp"
-          @touchstart="handleTouchStart"
-          @touchmove="handleTouchMove"
-          @touchend="handleTouchEnd">
+
+          >
           <div class="card-face front">
             <button class="speak-button" @click.stop="speakText(currentCard.front)">
               <i class="fas fa-volume-up"></i>
@@ -82,17 +80,25 @@
             <div class="card-content">
               {{ currentCard.back }}
             </div>
-            <div class="rating-buttons">
-              <button v-for="rating in ratings" :key="rating.value" @click.stop="rateCard(rating.value)"
-                :class="rating.class">
-                {{ rating.label }}
-              </button>
-            </div>
           </div>
         </div>
+            <div class="study-status-buttons">
+              <button 
+                class="status-button learning" 
+                @click.stop="markCardStatus('learning')"
+                :class="{ active: currentCard.level === 1 }">
+                <i class="fas fa-book"></i> Đang học
+              </button>
+              <button 
+                class="status-button known" 
+                @click.stop="markCardStatus('known')"
+                :class="{ active: currentCard.level === 2 }">
+                <i class="fas fa-check-circle"></i> Đã biết
+              </button>
+            </div>
       </div>
 
-      <div v-else class="completion-message" :class="{ 'show-animation': showCompletion }">
+      <div v-else class="completion-message show-animation" :class="{ 'show-animation': showCompletion }">
         <div class="completion-content">
           <div class="completion-icon">
             <i class="fas fa-trophy"></i>
@@ -180,54 +186,23 @@ const mouseCurrentX = ref(0)
 
 const currentCard = computed(() => {
   if (!deck.value) return null
-  return currentCardIndex.value < deck.value.cards.length
-    ? deck.value.cards[currentCardIndex.value]
+  // Chỉ hiển thị các thẻ đang học (level = 1 hoặc chưa có level)
+  const learningCards = deck.value.cards.filter(card => !card.level || card.level === 1)
+  return currentCardIndex.value < learningCards.length
+    ? learningCards[currentCardIndex.value]
     : null
 })
 
-const ratings = [
-  { value: 1, label: 'Khó nhớ', class: 'rating-hard' },
-  { value: 2, label: 'Tạm được', class: 'rating-medium' },
-  { value: 3, label: 'Dễ nhớ', class: 'rating-easy' }
-]
 
 const confettiColors = [
   '#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
   '#3b82f6', '#ec4899', '#14b8a6', '#f97316', '#84cc16'
 ]
 
-const handleTouchStart = (e: TouchEvent) => {
-  touchStartX.value = e.touches[0].clientX
-}
-
-const handleTouchMove = (e: TouchEvent) => {
-  touchEndX.value = e.touches[0].clientX
-}
-
-const handleTouchEnd = () => {
-  const swipeDistance = touchEndX.value - touchStartX.value
-  const minSwipeDistance = 50 // Khoảng cách tối thiểu để xem là swipe
-
-  if (Math.abs(swipeDistance) > minSwipeDistance) {
-    if (swipeDistance > 0 && currentCardIndex.value > 0) {
-      // Swipe phải -> quay lại thẻ trước
-      slideDirection.value = 'right'
-      setTimeout(() => {
-        currentCardIndex.value--
-        showAnswer.value = false
-        slideDirection.value = null
-      }, 300)
-    } else if (swipeDistance < 0 && currentCardIndex.value < (deck.value?.cards.length || 0) - 1) {
-      // Swipe trái -> chuyển sang thẻ tiếp
-      slideDirection.value = 'left'
-      setTimeout(() => {
-        currentCardIndex.value++
-        showAnswer.value = false
-        slideDirection.value = null
-      }, 300)
-    }
-  }
-}
+const learningCardsCount = computed(() => {
+  if (!deck.value) return 0
+  return deck.value.cards.filter(card => !card.level || card.level === 1).length
+})
 
 const handleKeyPress = (e: KeyboardEvent) => {
   if (e.key === 'ArrowLeft' && currentCardIndex.value > 0) {
@@ -305,13 +280,28 @@ const rateCard = (rating: number) => {
   }
 }
 
-const restartStudy = () => {
+const restartStudy = async () => {
+  if (!deck.value || !deckId) return
+  
+  const now = new Date()
+  // Reset tất cả các thẻ về trạng thái đang học
+  for (const card of deck.value.cards) {
+    await store.updateCardReview(deckId, card._id, {
+      level: 1,
+      nextReview: now
+    })
+  }
+  
+  // Reset các biến theo dõi
   currentCardIndex.value = 0
   showAnswer.value = false
   showCompletion.value = false
   studyTime.value = 0
   completedCards.value = 0
   startStudyTimer()
+  
+  // Tải lại dữ liệu deck
+  await initStudy()
 }
 
 const speakText = (text: string) => {
@@ -392,6 +382,57 @@ const navigateCard = (direction: 'prev' | 'next') => {
       slideDirection.value = null
     }, 300)
   }
+}
+
+const markCardStatus = async (status: 'learning' | 'known') => {
+  if (!deck.value || !currentCard.value || !deckId) return
+
+  const card = currentCard.value
+  const newLevel = status === 'learning' ? 1 : 2
+  const now = new Date()
+
+  await store.updateCardReview(deckId, card._id, {
+    level: newLevel,
+    nextReview: now
+  })
+
+  completedCards.value++
+  showAnswer.value = false
+  
+  // Chỉ hiển thị các thẻ đang học (level = 1 hoặc chưa có level)
+  const learningCards = deck.value.cards.filter(c => !c.level || c.level === 1)
+  if (currentCardIndex.value < learningCards.length - 1) {
+    currentCardIndex.value++
+  } else {
+    stopStudyTimer()
+    setTimeout(() => {
+      showCompletion.value = true
+    }, 500)
+  }
+}
+
+const resetAllCards = async () => {
+  if (!deck.value || !deckId) return
+  
+  const now = new Date()
+  // Reset tất cả các thẻ về trạng thái đang học
+  for (const card of deck.value.cards) {
+    await store.updateCardReview(deckId, card._id, {
+      level: 1,
+      nextReview: now
+    })
+  }
+  
+  // Reset các biến theo dõi
+  currentCardIndex.value = 0
+  showAnswer.value = false
+  showCompletion.value = false
+  studyTime.value = 0
+  completedCards.value = 0
+  startStudyTimer()
+  
+  // Tải lại dữ liệu deck
+  await initStudy()
 }
 
 onMounted(() => {
@@ -495,7 +536,6 @@ initStudy()
   position: relative;
   width: 100%;
   height: 400px;
-  cursor: grab;
   transform-style: preserve-3d;
   transition: all 0.3s ease;
   will-change: transform;
@@ -950,5 +990,74 @@ initStudy()
   50% {
     transform: translateY(-20px) scale(1.1);
   }
+}
+
+.study-status-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.status-button {
+  padding: 0.75rem;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.status-button.learning {
+  background-color: #e0e7ff;
+  color: #4f46e5;
+}
+
+.status-button.learning:hover {
+  background-color: #c7d2fe;
+  transform: translateY(-2px);
+}
+
+.status-button.learning.active {
+  background-color: #4f46e5;
+  color: white;
+}
+
+.status-button.known {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.status-button.known:hover {
+  background-color: #bbf7d0;
+  transform: translateY(-2px);
+}
+
+.status-button.known.active {
+  background-color: #16a34a;
+  color: white;
+}
+
+.reset-button {
+  padding: 0.75rem 1.5rem;
+  background-color: #f59e0b;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.reset-button:hover {
+  background-color: #d97706;
+  transform: translateY(-2px);
 }
 </style>
