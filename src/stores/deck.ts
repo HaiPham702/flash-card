@@ -13,6 +13,13 @@ export interface Card {
     lastReview?: Date
     nextReview?: Date
     level: number
+    order?: number
+}
+
+export interface User {
+    _id: string;
+    name: string;
+    email: string;
 }
 
 export interface Deck {
@@ -23,6 +30,11 @@ export interface Deck {
     totalCards: number
     dueCards: number
     cards: Card[]
+    order?: number
+    creator: User
+    modifier: User
+    createdAt: Date
+    updatedAt: Date
 }
 
 export const useDeckStore = defineStore('deck', () => {
@@ -92,11 +104,11 @@ export const useDeckStore = defineStore('deck', () => {
         }
     }
 
-    async function updateDeck(deckId: any, name: string, description: string) {
+    async function updateDeck(deckId: any, name: string, description: string, creator: string) {
         isLoading.value = true
         error.value = null
         try {
-            const updatedDeck = await api.updateDeck(deckId, name, description)
+            const updatedDeck = await api.updateDeck(deckId, name, description, creator)
             const index = decks.value.findIndex(d => d.id === deckId)
             if (index !== -1) {
                 decks.value[index] = updatedDeck
@@ -175,6 +187,72 @@ export const useDeckStore = defineStore('deck', () => {
         }
     }
 
+    // Reorder cards within a deck
+    async function reorderCards(deckId: any, cardOrders: { id: string, order: number }[]) {
+        isLoading.value = true
+        error.value = null
+        try {
+            console.log('Store: Reordering cards for deck', deckId, 'with data:', cardOrders);
+            
+            // Ensure we're using the correct ID format
+            const formattedOrders = cardOrders.map(order => ({
+                id: order.id.toString(), // Convert to string to ensure consistency
+                order: order.order
+            }));
+
+            const updatedDeck = await api.reorderCards(deckId, formattedOrders)
+            
+            // Update local state
+            const index = decks.value.findIndex(d => 
+                d._id?.toString() === deckId?.toString() || 
+                d.id?.toString() === deckId?.toString()
+            );
+            
+            if (index !== -1) {
+                decks.value[index] = updatedDeck;
+                console.log('Updated deck in store:', updatedDeck);
+            } else {
+                console.warn('Deck not found in store for update:', deckId);
+            }
+            
+            return updatedDeck;
+        } catch (err) {
+            error.value = err instanceof Error ? err.message : 'Failed to reorder cards';
+            console.error('Error reordering cards in store:', err);
+            throw err;
+        } finally {
+            isLoading.value = false;
+        }
+    }
+
+    // Reorder decks
+    async function reorderDecks(deckOrders: { id: string, order: number }[]) {
+        isLoading.value = true;
+        error.value = null;
+        try {
+            console.log('Store: Reordering decks with data:', deckOrders);
+            
+            // Ensure we're using the correct ID format
+            const formattedOrders = deckOrders.map(order => ({
+                id: order.id.toString(), // Convert to string to ensure consistency
+                order: order.order
+            }));
+
+            const updatedDecks = await api.reorderDecks(formattedOrders);
+            console.log('Received updated decks from API:', updatedDecks);
+            
+            // Update local state
+            decks.value = updatedDecks;
+            return updatedDecks;
+        } catch (err) {
+            error.value = err instanceof Error ? err.message : 'Failed to reorder decks';
+            console.error('Error reordering decks in store:', err);
+            throw err;
+        } finally {
+            isLoading.value = false;
+        }
+    }
+
     // Cập nhật thông tin review của card
     const updateCardReview = async (deckId: any, cardId: any, updates: { level: number, nextReview: Date }) => {
         isLoading.value = true
@@ -241,6 +319,8 @@ export const useDeckStore = defineStore('deck', () => {
         updateCard,
         deleteCard,
         updateCardReview,
-        fetchDeckById
+        fetchDeckById,
+        reorderCards,
+        reorderDecks
     }
 }) 

@@ -1,6 +1,6 @@
 import { apiRequest } from './index'
 
-interface AIResponse {
+export interface AIResponse {
     response: string;
 }
 

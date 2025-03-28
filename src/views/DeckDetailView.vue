@@ -2,8 +2,22 @@
   <div class="deck-detail">
     <div class="header">
       <div class="deck-info">
-        <h1>{{ deck.name }}</h1>
-        <p>{{ deck.description }}</p>
+        <div class="deck-title-section">
+          <h1 v-if="!editingDeckInfo">{{ deck.name }}</h1>
+          <input v-else v-model="editedDeckInfo.name" class="edit-deck-input" placeholder="Tên bộ thẻ" required />
+
+          <p v-if="!editingDeckInfo">{{ deck.description }}</p>
+          <textarea v-else v-model="editedDeckInfo.description" class="edit-deck-textarea"
+            placeholder="Mô tả (tùy chọn)" />
+
+          <div v-if="editingDeckInfo" class="edit-deck-actions">
+            <button @click="cancelEditDeckInfo" class="cancel-button">Hủy</button>
+            <button @click="saveDeckInfo" class="submit-button">Lưu</button>
+          </div>
+          <button v-else @click="startEditDeckInfo" class="edit-deck-info-button">
+            <i class="fas fa-edit"></i> Sửa thông tin
+          </button>
+        </div>
       </div>
       <div class="header-actions">
         <router-link :to="deck.cards.length > 0 ? '/study/' + deckId : ''" class="study-button"
@@ -21,29 +35,51 @@
       </div>
     </div>
 
-    <div class="cards-list">
-      <div v-for="card in deck.cards" :key="card.id" class="card-item">
-        <div class="card-content">
-          <div class="front">
-            <h3>Mặt trước</h3>
-            <p>{{ card.front }}</p>
-            <img v-if="card.image" :src="card.image" alt="Card image" class="card-image">
+    <div v-if="deck.cards.length > 1" class="reorder-hint">
+      <i class="fas fa-info-circle"></i>
+      Kéo thả để sắp xếp lại thứ tự các thẻ
+    </div>
+
+    <draggable v-model="sortableCards" class="cards-list" item-key="_id" @end="onDragEnd" v-if="deck.cards.length > 0"
+      :animation="200" ghost-class="ghost-card" handle=".card-drag-handle">
+      <template #item="{ element }">
+        <div class="card-item">
+          <div class="card-drag-handle" v-if="deck.cards.length > 1">
+            <i class="fas fa-grip-lines"></i>
           </div>
-          <div class="divider"></div>
-          <div class="back">
-            <h3>Mặt sau</h3>
-            <p>{{ card.back }}</p>
+          <div class="card-content">
+            <div class="card-row">
+              <div class="front">
+                <h3>Mặt trước</h3>
+                <p>{{ element.front }}</p>
+              </div>
+              <div class="back">
+                <h3>Mặt sau</h3>
+                <p>{{ element.back }}</p>
+              </div>
+            </div>
+            <div v-if="element.image" class="card-image-container">
+              <img :src="element.image" alt="Card image" class="card-image">
+            </div>
+          </div>
+          <div class="card-actions">
+            <button @click="editCard(element)" class="edit-button">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button @click="deleteCard(element.id)" class="delete-button">
+              <i class="fa-solid fa-trash"></i>
+            </button>
           </div>
         </div>
-        <div class="card-actions">
-          <button @click="editCard(card)" class="edit-button">
-            <i class="fas fa-edit"></i>
-          </button>
-          <button @click="deleteCard(card.id)" class="delete-button">
-            <i class="fa-solid fa-trash"></i>
-          </button>
-        </div>
-      </div>
+      </template>
+    </draggable>
+
+    <div v-if="deck.cards.length === 0 && !isLoading" class="empty-deck">
+      <i class="fas fa-layer-group"></i>
+      <p>Bộ thẻ này chưa có thẻ nào</p>
+      <button @click="showAddCardModal = true" class="add-button">
+        <i class="fas fa-plus"></i> Thêm thẻ đầu tiên
+      </button>
     </div>
 
     <!-- Modal thêm/sửa thẻ -->
@@ -130,6 +166,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { useDeckStore } from '@/stores/deck'
 import axios from 'axios'
 import { generateSuggestions } from '@/api/ai'
+import draggable from 'vuedraggable'
+import { useAuthStore } from '@/stores/auth'
+
 
 interface Card {
   _id: any
@@ -140,19 +179,29 @@ interface Card {
   lastReview?: Date
   nextReview?: Date
   level: number
+  order?: number
 }
 
 const route = useRoute()
 const router = useRouter()
 const store = useDeckStore()
+const authStore = useAuthStore()
+
+
 const deckId = route.params.id
 
 const showAddCardModal = ref(false)
 const editingCard = ref<Card | null>(null)
+const editingDeckInfo = ref(false)
 const currentCard = ref({
   front: '',
   back: '',
   image: ''
+})
+
+const editedDeckInfo = ref({
+  name: '',
+  description: ''
 })
 
 const aiSuggestions = ref<string[]>([])
@@ -172,6 +221,24 @@ const deck = ref<{
   cards: []
 })
 
+const sortableCards = computed({
+  get: () => {
+    return [...deck.value.cards].sort((a, b) => {
+      const orderA = a.order !== undefined ? a.order : 0
+      const orderB = b.order !== undefined ? b.order : 0
+      return orderA - orderB
+    })
+  },
+  set: (value) => {
+    // We don't need to set anything here as we'll use the drag end event\
+
+    deck.value.cards = value.map((card, index) => ({
+      ...card,
+      order: index
+    }))
+  }
+})
+
 const UNSPLASH_API_KEY = 'AhQ1hPHwx0_s4Oo4MgZ9BD_Owjy_TIQZvyNydOIe7m0'
 const VITE_UNSPLASH_LINK = 'https://api.unsplash.com/search/photos'
 const searchQuery = ref('')
@@ -179,26 +246,64 @@ const searchResults = ref<any[]>([])
 const selectedImage = ref<string | null>(null)
 const isSearchingImages = ref(false)
 const searchTimeout = ref<number | null>(null)
+const isLoading = ref(true)
 
 const initData = async () => {
-  await store.fetchDecks()
-  const foundDeck = store.getDeckById(deckId)
-  if (foundDeck) {
-    deck.value = {
-      id: foundDeck._id || '',
-      name: foundDeck.name || '',
-      description: foundDeck.description || '',
-      cards: foundDeck.cards.map(card => ({
-        _id: card._id || '',
-        id: card._id || '',
-        front: card.front,
-        back: card.back,
-        image: card.image,
-        lastReview: card.lastReview,
-        nextReview: card.nextReview,
-        level: card.level
-      }))
+  isLoading.value = true
+  try {
+    await store.fetchDecks()
+    const foundDeck = store.getDeckById(deckId)
+    if (foundDeck) {
+      deck.value = {
+        id: foundDeck._id || '',
+        name: foundDeck.name || '',
+        description: foundDeck.description || '',
+        cards: foundDeck.cards.map(card => ({
+          _id: card._id || '',
+          id: card._id || '',
+          front: card.front,
+          back: card.back,
+          image: card.image,
+          lastReview: card.lastReview,
+          nextReview: card.nextReview,
+          level: card.level,
+          order: card.order
+        }))
+      }
     }
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const startEditDeckInfo = () => {
+  editedDeckInfo.value = {
+    name: deck.value.name,
+    description: deck.value.description || ''
+  }
+  editingDeckInfo.value = true
+}
+
+const cancelEditDeckInfo = () => {
+  editingDeckInfo.value = false
+}
+
+const saveDeckInfo = async () => {
+  if (!editedDeckInfo.value.name.trim()) {
+    alert('Tên bộ thẻ không được để trống')
+    return
+  }
+
+  var userId = authStore.currentUser?.id
+  try {
+    if (!userId) {
+      throw new Error('User ID is required')
+    }
+    await store.updateDeck(deckId, editedDeckInfo.value.name, editedDeckInfo.value.description, userId)
+    await initData()
+    editingDeckInfo.value = false
+  } catch (error) {
+    console.error('Failed to update deck info:', error)
   }
 }
 
@@ -250,78 +355,80 @@ const deleteCard = async (cardId: string) => {
 }
 
 const deleteDeck = async () => {
-  if (confirm('Bạn có chắc chắn muốn xóa bộ thẻ này? Tất cả các thẻ trong bộ sẽ bị xóa.')) {
+  if (confirm('Bạn có chắc chắn muốn xóa toàn bộ bộ thẻ này? Hành động này không thể hoàn tác.')) {
     await store.deleteDeck(deckId)
     router.push('/decks')
   }
 }
 
-const searchImages = async (event?: Event) => {
-  if (!searchQuery.value) {
-    searchResults.value = []
-    return
-  }
-
+// Tìm kiếm hình ảnh từ Unsplash
+const searchImages = () => {
   if (searchTimeout.value) {
     clearTimeout(searchTimeout.value)
   }
 
-  isSearchingImages.value = true
+  if (!searchQuery.value.trim()) {
+    searchResults.value = []
+    return
+  }
 
+  isSearchingImages.value = true
   searchTimeout.value = window.setTimeout(async () => {
     try {
-      const params = {
-        client_id: UNSPLASH_API_KEY,
-        query: encodeURIComponent(searchQuery.value),
-        per_page: 9,
-        page: 1
-      }
-      const response = await axios.get(VITE_UNSPLASH_LINK, { params })
+      const response = await axios.get(VITE_UNSPLASH_LINK, {
+        params: {
+          query: searchQuery.value,
+          client_id: UNSPLASH_API_KEY,
+          per_page: 20
+        }
+      })
       searchResults.value = response.data.results
     } catch (error) {
       console.error('Error searching images:', error)
     } finally {
       isSearchingImages.value = false
     }
-  }, 700)
+  }, 500)
 }
 
-const selectImage = (imageUrl: string) => {
-  selectedImage.value = imageUrl
-  isSearchingImages.value = false
+const selectImage = (url: string) => {
+  selectedImage.value = url
+  searchResults.value = []
+  searchQuery.value = ''
 }
 
-const fetchAISuggestions = async (frontContent: string) => {
-  if (!frontContent.trim()) {
-    aiSuggestions.value = []
-    return
-  }
-
+// Gợi ý từ AI
+const fetchAISuggestions = (query: string) => {
   if (suggestionTimeout.value) {
     clearTimeout(suggestionTimeout.value)
   }
 
-  isLoadingSuggestions.value = true
+  if (!query.trim() || query.length < 3) {
+    showSuggestions.value = false
+    return
+  }
+
   suggestionTimeout.value = window.setTimeout(async () => {
+    isLoadingSuggestions.value = true
+    showSuggestions.value = false
     try {
-      let prompt = `Nghĩa của từ: ${frontContent} ngắn gọn chỉ bao gồm định nghĩa không chứa từ đó trong câu trả lời`
-
-      interface AIResponse {
-        response: string;
+      const suggestions = await generateSuggestions(query)
+      if (Array.isArray(suggestions)) {
+        aiSuggestions.value = suggestions
+      } else if (typeof suggestions === 'string') {
+        aiSuggestions.value = [suggestions]
+      } else if (suggestions && typeof suggestions === 'object' && 'response' in suggestions) {
+        aiSuggestions.value = [(suggestions as { response: string }).response]
+      } else {
+        aiSuggestions.value = []
       }
-      const result = await generateSuggestions(prompt) as AIResponse;
-      aiSuggestions.value = result?.response ? [result.response] : [];
       showSuggestions.value = true
-
-      // Tự động tìm kiếm ảnh
-      searchQuery.value = frontContent
-      await searchImages()
     } catch (error) {
-      console.error('Error fetching AI suggestions:', error)
+      console.error('Error getting suggestions:', error)
     } finally {
       isLoadingSuggestions.value = false
     }
-  }, 700)
+  }, 600)
 }
 
 const selectSuggestion = (suggestion: string) => {
@@ -329,7 +436,35 @@ const selectSuggestion = (suggestion: string) => {
   showSuggestions.value = false
 }
 
-initData()
+onMounted(() => {
+  initData()
+})
+
+const onDragEnd = async () => {
+  if (!sortableCards.value.length) return
+
+  // Create an array of card IDs and new orders to update on the server
+  const cardOrders = sortableCards.value.map((card, index) => {
+    const cardId = card._id || card.id
+    console.log('Processing card:', { id: cardId, front: card.front, index })
+    return {
+      id: cardId,
+      order: index
+    }
+  })
+
+  console.log('Reordering cards with:', cardOrders);
+
+  // Update the orders on the server
+  isLoading.value = true
+  try {
+    await store.reorderCards(deckId, cardOrders)
+  } catch (error) {
+    console.error('Error reordering cards:', error);
+  } finally {
+    isLoading.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -344,45 +479,173 @@ initData()
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
-.deck-info h1 {
-  margin-bottom: 0.5rem;
+.deck-info {
+  flex: 1;
+  min-width: 300px;
 }
 
-.deck-info p {
-  color: #666;
+.deck-title-section {
+  position: relative;
 }
 
-.add-button {
-  padding: 0.75rem 1.5rem;
-  background-color: #6366f1;
-  color: white;
+.edit-deck-info-button {
+  background: none;
   border: none;
-  border-radius: 0.5rem;
+  color: #6366f1;
   cursor: pointer;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+  padding: 0.3rem 0.5rem;
+}
+
+.edit-deck-info-button:hover {
+  background-color: #f3f4f6;
+  border-radius: 0.3rem;
+}
+
+.edit-deck-input,
+.edit-deck-textarea {
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+}
+
+.edit-deck-textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+.edit-deck-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.add-button,
+.study-button,
+.delete-deck-button {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-weight: 500;
+  white-space: nowrap;
+}
+
+.add-button {
+  background-color: #6366f1;
+  color: white;
+}
+
+.study-button {
+  background-color: #10b981;
+  color: white;
+  text-decoration: none;
+  position: relative;
+}
+
+.study-button.disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.study-button .tooltip {
+  position: absolute;
+  bottom: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #374151;
+  color: white;
+  padding: 0.5rem;
+  border-radius: 0.3rem;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+}
+
+.study-button.disabled:hover .tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+.delete-deck-button {
+  background-color: #ef4444;
+  color: white;
+}
+
+.reorder-hint {
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: #6366f1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .cards-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
 .card-item {
   background-color: white;
   border-radius: 1rem;
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  padding: 1rem;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.card-drag-handle {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  color: #aaa;
+  cursor: grab;
+  padding: 5px;
+}
+
+.card-drag-handle:hover {
+  color: #666;
+}
+
+.ghost-card {
+  opacity: 0.5;
+  background: #f3f4f6;
+  border: 2px dashed #6366f1;
 }
 
 .card-content {
+  flex: 1;
   display: flex;
+  flex-direction: column;
   gap: 1rem;
+}
+
+.card-row {
+  display: flex;
+  gap: 1.5rem;
 }
 
 .front,
@@ -392,15 +655,26 @@ initData()
 
 .front h3,
 .back h3 {
-  font-size: 0.875rem;
-  text-transform: uppercase;
-  color: #6366f1;
+  font-size: 0.9rem;
+  color: #6b7280;
   margin-bottom: 0.5rem;
 }
 
-.divider {
-  width: 1px;
-  background-color: #e5e7eb;
+.front p,
+.back p {
+  word-break: break-word;
+}
+
+.card-image-container {
+  margin-top: 1rem;
+}
+
+.card-image {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 0.5rem;
+  display: block;
+  margin: 0 auto;
 }
 
 .card-actions {
@@ -408,15 +682,17 @@ initData()
   justify-content: flex-end;
   gap: 0.5rem;
   margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e5e7eb;
 }
 
 .edit-button,
 .delete-button {
-  padding: 0.5rem;
   border: none;
-  border-radius: 0.5rem;
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
 }
 
@@ -427,7 +703,26 @@ initData()
 
 .delete-button {
   background-color: #fee2e2;
-  color: #dc2626;
+  color: #ef4444;
+}
+
+.empty-deck {
+  padding: 3rem;
+  background-color: white;
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  text-align: center;
+}
+
+.empty-deck i {
+  font-size: 3rem;
+  color: #d1d5db;
+  margin-bottom: 1rem;
+}
+
+.empty-deck p {
+  margin-bottom: 1.5rem;
+  color: #6b7280;
 }
 
 /* Modal styles */
@@ -439,10 +734,9 @@ initData()
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  padding: 1rem;
-  overflow-y: auto;
+  z-index: 50;
 }
 
 .modal {
@@ -453,11 +747,10 @@ initData()
   max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
-  margin: 2rem 0;
 }
 
 .form-group {
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .form-group label {
@@ -466,37 +759,163 @@ initData()
   font-weight: 500;
 }
 
-.form-group input {
+.form-input,
+.form-textarea {
   width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #e5e7eb;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
   border-radius: 0.5rem;
-  font-size: 1rem;
-  line-height: 1.5;
-  transition: border-color 0.2s;
-}
-
-.form-group input:focus {
-  outline: none;
-  border-color: #6366f1;
 }
 
 .form-textarea {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  line-height: 1.5;
+  min-height: 5rem;
   resize: vertical;
-  min-height: 80px;
-  max-height: 150px;
-  transition: border-color 0.2s;
 }
 
-.form-textarea:focus {
-  outline: none;
-  border-color: #6366f1;
+.back-content-container {
+  position: relative;
+}
+
+.suggestions-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: white;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  z-index: 10;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.suggestions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background-color: #f9fafb;
+  border-bottom: 1px solid #d1d5db;
+}
+
+.close-suggestions {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.suggestions-list {
+  padding: 0.5rem 0;
+}
+
+.suggestion-item {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+.suggestion-item:hover {
+  background-color: #f3f4f6;
+}
+
+.suggestions-loading {
+  padding: 0.5rem 1rem;
+  background-color: white;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 10;
+}
+
+.image-search {
+  position: relative;
+}
+
+.image-search-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+}
+
+.image-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: white;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  padding: 0.5rem;
+  z-index: 10;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.image-result {
+  cursor: pointer;
+  border-radius: 0.3rem;
+  overflow: hidden;
+}
+
+.image-result:hover {
+  opacity: 0.8;
+}
+
+.image-result img {
+  width: 100%;
+  height: 80px;
+  object-fit: cover;
+}
+
+.selected-image {
+  margin-top: 1rem;
+  position: relative;
+}
+
+.selected-image img {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 0.5rem;
+  display: block;
+}
+
+.remove-image {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.loading-spinner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: white;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  margin-top: 0.5rem;
 }
 
 .modal-actions {
@@ -525,374 +944,21 @@ initData()
   color: white;
 }
 
-.loading-spinner {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  margin: 1rem 0;
-  color: #6366f1;
-}
+@media (max-width: 768px) {
+  .header-actions {
+    width: 100%;
+    justify-content: center;
+  }
 
-.loading-spinner i {
-  font-size: 1.25rem;
-}
+  .card-row {
+    flex-direction: column;
+    gap: 1rem;
+  }
 
-.loading-spinner span {
-  font-size: 0.875rem;
-}
-
-.image-results {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.5rem;
-  margin-top: 1rem;
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.image-result {
-  cursor: pointer;
-  border-radius: 0.5rem;
-  overflow: hidden;
-}
-
-.image-result img {
-  width: 100%;
-  height: 80px;
-  object-fit: cover;
-}
-
-.image-result:hover {
-  opacity: 0.8;
-}
-
-.card-image {
-  width: 100%;
-  height: 150px;
-  object-fit: cover;
-  border-radius: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-.image-search {
-  margin-top: 0.5rem;
-}
-
-.image-search-input {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
-}
-
-.selected-image {
-  position: relative;
-  margin-top: 1rem;
-}
-
-.selected-image img {
-  width: 100%;
-  height: 150px;
-  object-fit: cover;
-  border-radius: 0.5rem;
-}
-
-.remove-image {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  background: rgba(0, 0, 0, 0.5);
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 2rem;
-  height: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-
-.header-actions {
-  display: flex;
-  gap: 1rem;
-}
-
-.delete-deck-button {
-  padding: 0.75rem 1.5rem;
-  background-color: #ef4444;
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 500;
-}
-
-.delete-deck-button:hover {
-  background-color: #dc2626;
-}
-
-.study-button {
-  padding: 0.75rem 1.5rem;
-  background-color: #10b981;
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 500;
-  text-decoration: none;
-}
-
-.study-button:hover {
-  background-color: #059669;
-}
-
-.study-button.disabled {
-  background-color: #9ca3af;
-  cursor: not-allowed;
-  position: relative;
-}
-
-.study-button.disabled:hover {
-  background-color: #9ca3af;
-}
-
-.study-button .tooltip {
-  position: absolute;
-  bottom: -35px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #374151;
-  color: white;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.study-button.disabled:hover .tooltip {
-  opacity: 1;
-}
-
-.question-type-select {
-  width: 100%;
-  padding: 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
-  background-color: white;
-}
-
-.true-false-options {
-  display: flex;
-  gap: 2rem;
-  margin-top: 0.5rem;
-}
-
-.true-false-options label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-}
-
-.option-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 0.5rem;
-}
-
-.option-item input[type="text"] {
-  flex: 1;
-  padding: 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
-}
-
-.matching-pair {
-  display: grid;
-  grid-template-columns: 1fr 1fr auto;
-  gap: 1rem;
-  margin-bottom: 0.5rem;
-}
-
-.matching-pair input {
-  padding: 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.5rem;
-}
-
-.add-option {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background-color: #f3f4f6;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  margin-top: 0.5rem;
-}
-
-.remove-option {
-  padding: 0.5rem;
-  background-color: #fee2e2;
-  color: #dc2626;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-}
-
-/* Media queries */
-@media screen and (max-height: 600px) {
-  .modal {
-    padding: 1rem;
+  .divider {
+    height: 1px;
+    background-color: #e5e7eb;
     margin: 1rem 0;
   }
-
-  .form-textarea {
-    min-height: 60px;
-    max-height: 100px;
-  }
-
-  .image-results {
-    max-height: 150px;
-  }
-
-  .image-result img {
-    height: 60px;
-  }
-
-  .selected-image img {
-    height: 100px;
-  }
-
-  .card-image {
-    height: 100px;
-  }
-}
-
-@media screen and (max-height: 400px) {
-  .modal {
-    padding: 0.75rem;
-    margin: 0.5rem 0;
-  }
-
-  .form-group {
-    margin-bottom: 0.5rem;
-  }
-
-  .form-textarea {
-    min-height: 40px;
-    max-height: 80px;
-  }
-
-  .image-results {
-    max-height: 100px;
-  }
-
-  .image-result img {
-    height: 50px;
-  }
-
-  .selected-image img {
-    height: 80px;
-  }
-}
-
-.back-content-container {
-  position: relative;
-  width: 100%;
-}
-
-.suggestions-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  margin-top: 0.5rem;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  z-index: 10;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.suggestions-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem;
-  border-bottom: 1px solid #e5e7eb;
-  background-color: #f9fafb;
-  position: sticky;
-  top: 0;
-  z-index: 1;
-}
-
-.suggestions-header span {
-  font-weight: 500;
-  color: #374151;
-}
-
-.close-suggestions {
-  background: none;
-  border: none;
-  color: #6b7280;
-  cursor: pointer;
-  padding: 0.25rem;
-  border-radius: 0.25rem;
-}
-
-.close-suggestions:hover {
-  background-color: #e5e7eb;
-  color: #374151;
-}
-
-.suggestions-list {
-  padding: 0.5rem 0;
-}
-
-.suggestion-item {
-  padding: 0.75rem 1rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.suggestion-item:hover {
-  background-color: #f3f4f6;
-}
-
-.suggestions-loading {
-  position: absolute;
-  right: 1rem;
-  top: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #6366f1;
-  background-color: rgba(255, 255, 255, 0.9);
-  padding: 0.5rem;
-  border-radius: 0.5rem;
-}
-
-.suggestions-loading i {
-  font-size: 1rem;
-}
-
-.suggestions-loading span {
-  font-size: 0.875rem;
 }
 </style>
