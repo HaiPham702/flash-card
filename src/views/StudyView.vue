@@ -21,8 +21,9 @@
     </div>
 
     <template v-else-if="deck">
-      <div class="progress">
-        <span>{{ currentCardIndex >= learningCardsCount ? learningCardsCount : currentCardIndex + 1 }}/{{ learningCardsCount }}</span>
+      <div class="progress" v-if="learningCardsCount">
+        <span>{{ currentCardIndex >= learningCardsCount ? learningCardsCount : currentCardIndex + 1 }}/{{
+          learningCardsCount }}</span>
         <div class="progress-bar">
           <div class="progress-fill" :style="{ width: `${((currentCardIndex + 1) / learningCardsCount) * 100}%` }">
           </div>
@@ -30,35 +31,24 @@
       </div>
 
       <div v-if="currentCard" class="card-container">
-   
+
         <div class="navigation-buttons">
-          <button 
-            class="nav-button prev-button" 
-            @click="navigateCard('prev')"
-            :disabled="currentCardIndex === 0">
+          <button class="nav-button prev-button" @click="navigateCard('prev')" :disabled="currentCardIndex === 0">
             <i class="fas fa-arrow-left"></i>
           </button>
-          <button 
-            class="nav-button next-button" 
-            @click="navigateCard('next')"
-            :disabled="currentCardIndex === (deck?.cards.length || 0) - 1">
+          <button class="nav-button next-button" @click="navigateCard('next')">
             <i class="fas fa-arrow-right"></i>
           </button>
         </div>
-        <div class="flashcard" 
-          :class="{ 
-            flipped: showAnswer,
-            'slide-left': slideDirection === 'left',
-            'slide-right': slideDirection === 'right',
-            'dragging': isDragging
-          }" 
-          :style="{
-            transform: isDragging ? `translateX(${mouseCurrentX - mouseStartX}px)` : undefined,
-            transition: isDragging ? 'none' : 'all 0.3s ease'
-          }"
-          @click="showAnswer = !showAnswer"
-
-          >
+        <div class="flashcard" :class="{
+          flipped: showAnswer,
+          'slide-left': slideDirection === 'left',
+          'slide-right': slideDirection === 'right',
+          'dragging': isDragging
+        }" :style="{
+          transform: isDragging ? `translateX(${mouseCurrentX - mouseStartX}px)` : undefined,
+          transition: isDragging ? 'none' : 'all 0.3s ease'
+        }" @click="showAnswer = !showAnswer">
           <div class="card-face front">
             <button class="speak-button" @click.stop="speakText(currentCard.front)">
               <i class="fas fa-volume-up"></i>
@@ -82,20 +72,16 @@
             </div>
           </div>
         </div>
-            <div class="study-status-buttons">
-              <button 
-                class="status-button learning" 
-                @click.stop="markCardStatus('learning')"
-                :class="{ active: currentCard.level === 1 }">
-                <i class="fas fa-book"></i> Đang học
-              </button>
-              <button 
-                class="status-button known" 
-                @click.stop="markCardStatus('known')"
-                :class="{ active: currentCard.level === 2 }">
-                <i class="fas fa-check-circle"></i> Đã biết
-              </button>
-            </div>
+        <div class="study-status-buttons">
+          <button class="status-button learning" @click.stop="markCardStatus('learning')"
+            :class="{ active: currentCard.level === 1 }">
+            <i class="fas fa-book"></i> Đang học
+          </button>
+          <button class="status-button known" @click.stop="markCardStatus('known')"
+            :class="{ active: currentCard.level === 2 }">
+            <i class="fas fa-check-circle"></i> Đã biết
+          </button>
+        </div>
       </div>
 
       <div v-else class="completion-message show-animation" :class="{ 'show-animation': showCompletion }">
@@ -128,9 +114,7 @@
             <router-link :to="'/deck/' + deckId" class="back-button">
               <i class="fas fa-arrow-left"></i> Quay lại bộ thẻ
             </router-link>
-            <button @click="restartStudy" class="restart-button">
-              <i class="fas fa-redo"></i> Học lại
-            </button>
+       
           </div>
         </div>
       </div>
@@ -174,8 +158,6 @@ const deck = ref<Deck | null>(null)
 const currentCardIndex = ref(0)
 const showAnswer = ref(false)
 const slideDirection = ref<'left' | 'right' | null>(null)
-const touchStartX = ref(0)
-const touchEndX = ref(0)
 const showCompletion = ref(false)
 const studyTime = ref(0)
 const completedCards = ref(0)
@@ -282,7 +264,7 @@ const rateCard = (rating: number) => {
 
 const restartStudy = async () => {
   if (!deck.value || !deckId) return
-  
+
   const now = new Date()
   // Reset tất cả các thẻ về trạng thái đang học
   for (const card of deck.value.cards) {
@@ -291,7 +273,7 @@ const restartStudy = async () => {
       nextReview: now
     })
   }
-  
+
   // Reset các biến theo dõi
   currentCardIndex.value = 0
   showAnswer.value = false
@@ -299,7 +281,7 @@ const restartStudy = async () => {
   studyTime.value = 0
   completedCards.value = 0
   startStudyTimer()
-  
+
   // Tải lại dữ liệu deck
   await initStudy()
 }
@@ -374,7 +356,7 @@ const navigateCard = (direction: 'prev' | 'next') => {
       showAnswer.value = false
       slideDirection.value = null
     }, 300)
-  } else if (direction === 'next' && currentCardIndex.value < (deck.value?.cards.length || 0) - 1) {
+  } else if (direction === 'next') {
     slideDirection.value = 'left'
     setTimeout(() => {
       currentCardIndex.value++
@@ -390,15 +372,16 @@ const markCardStatus = async (status: 'learning' | 'known') => {
   const card = currentCard.value
   const newLevel = status === 'learning' ? 1 : 2
   const now = new Date()
-
-  await store.updateCardReview(deckId, card._id, {
-    level: newLevel,
-    nextReview: now
-  })
+  if (status == 'known') {
+    await store.updateCardReview(deckId, card._id, {
+      level: newLevel,
+      nextReview: now
+    })
+  }
 
   completedCards.value++
   showAnswer.value = false
-  
+
   // Chỉ hiển thị các thẻ đang học (level = 1 hoặc chưa có level)
   const learningCards = deck.value.cards.filter(c => !c.level || c.level === 1)
   if (currentCardIndex.value < learningCards.length - 1) {
@@ -406,6 +389,8 @@ const markCardStatus = async (status: 'learning' | 'known') => {
   } else {
     stopStudyTimer()
     setTimeout(() => {
+      currentCardIndex.value++
+
       showCompletion.value = true
     }, 500)
   }
@@ -413,7 +398,7 @@ const markCardStatus = async (status: 'learning' | 'known') => {
 
 const resetAllCards = async () => {
   if (!deck.value || !deckId) return
-  
+
   const now = new Date()
   // Reset tất cả các thẻ về trạng thái đang học
   for (const card of deck.value.cards) {
@@ -422,7 +407,7 @@ const resetAllCards = async () => {
       nextReview: now
     })
   }
-  
+
   // Reset các biến theo dõi
   currentCardIndex.value = 0
   showAnswer.value = false
@@ -430,7 +415,7 @@ const resetAllCards = async () => {
   studyTime.value = 0
   completedCards.value = 0
   startStudyTimer()
-  
+
   // Tải lại dữ liệu deck
   await initStudy()
 }
@@ -906,12 +891,15 @@ initStudy()
     transform: translateY(-100%) rotate(0deg);
     opacity: 0;
   }
+
   10% {
     opacity: 1;
   }
+
   90% {
     opacity: 1;
   }
+
   100% {
     transform: translateY(100vh) rotate(360deg);
     opacity: 0;
@@ -984,9 +972,12 @@ initStudy()
 }
 
 @keyframes bounce {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0) scale(1);
   }
+
   50% {
     transform: translateY(-20px) scale(1.1);
   }
