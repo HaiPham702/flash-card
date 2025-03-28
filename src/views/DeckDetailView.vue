@@ -412,7 +412,8 @@ const fetchAISuggestions = (query: string) => {
     isLoadingSuggestions.value = true
     showSuggestions.value = false
     try {
-      const suggestions = await generateSuggestions(query)
+      const prompt = `Nghĩa của ${query} là gì, chỉ bao gồm nghĩa ngắn gọn và không có từ này trong câu trả lời`
+      const suggestions = await generateSuggestions(prompt)
       if (Array.isArray(suggestions)) {
         aiSuggestions.value = suggestions
       } else if (typeof suggestions === 'string') {
