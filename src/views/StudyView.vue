@@ -27,7 +27,40 @@
       </div>
 
       <div v-if="currentCard" class="card-container">
-        <div class="flashcard" :class="{ flipped: showAnswer }" @click="showAnswer = !showAnswer">
+   
+        <div class="navigation-buttons">
+          <button 
+            class="nav-button prev-button" 
+            @click="navigateCard('prev')"
+            :disabled="currentCardIndex === 0">
+            <i class="fas fa-arrow-left"></i>
+          </button>
+          <button 
+            class="nav-button next-button" 
+            @click="navigateCard('next')"
+            :disabled="currentCardIndex === (deck?.cards.length || 0) - 1">
+            <i class="fas fa-arrow-right"></i>
+          </button>
+        </div>
+        <div class="flashcard" 
+          :class="{ 
+            flipped: showAnswer,
+            'slide-left': slideDirection === 'left',
+            'slide-right': slideDirection === 'right',
+            'dragging': isDragging
+          }" 
+          :style="{
+            transform: isDragging ? `translateX(${mouseCurrentX - mouseStartX}px)` : undefined,
+            transition: isDragging ? 'none' : 'all 0.3s ease'
+          }"
+          @click="showAnswer = !showAnswer"
+          @mousedown="handleMouseDown"
+          @mousemove="handleMouseMove"
+          @mouseup="handleMouseUp"
+          @mouseleave="handleMouseUp"
+          @touchstart="handleTouchStart"
+          @touchmove="handleTouchMove"
+          @touchend="handleTouchEnd">
           <div class="card-face front">
             <button class="speak-button" @click.stop="speakText(currentCard.front)">
               <i class="fas fa-volume-up"></i>
@@ -49,8 +82,8 @@
             <div class="card-content">
               {{ currentCard.back }}
             </div>
-            <div class="rating-buttons" @click.stop>
-              <button v-for="rating in ratings" :key="rating.value" @click="rateCard(rating.value)"
+            <div class="rating-buttons">
+              <button v-for="rating in ratings" :key="rating.value" @click.stop="rateCard(rating.value)"
                 :class="rating.class">
                 {{ rating.label }}
               </button>
@@ -59,16 +92,40 @@
         </div>
       </div>
 
-      <div v-else class="completion-message">
-        <h2>🎉 Chúc mừng!</h2>
-        <p>Bạn đã hoàn thành phiên học tập này.</p>
-        <div class="completion-actions">
-          <router-link :to="'/deck/' + deckId" class="back-button">
-            Quay lại bộ thẻ
-          </router-link>
-          <button @click="restartStudy" class="restart-button">
-            Học lại
-          </button>
+      <div v-else class="completion-message" :class="{ 'show-animation': showCompletion }">
+        <div class="completion-content">
+          <div class="completion-icon">
+            <i class="fas fa-trophy"></i>
+          </div>
+          <div class="completion-title">
+            <h2>🎉 Chúc mừng!</h2>
+            <div class="confetti-container">
+              <div v-for="n in 50" :key="n" class="confetti" :style="{
+                left: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 3}s`,
+                backgroundColor: confettiColors[Math.floor(Math.random() * confettiColors.length)]
+              }"></div>
+            </div>
+          </div>
+          <p>Bạn đã hoàn thành phiên học tập này.</p>
+          <div class="completion-stats">
+            <div class="stat-item">
+              <i class="fas fa-clock"></i>
+              <span>Thời gian: {{ formatTime(studyTime) }}</span>
+            </div>
+            <div class="stat-item">
+              <i class="fas fa-star"></i>
+              <span>Thẻ đã học: {{ completedCards }}/{{ deck.cards.length }}</span>
+            </div>
+          </div>
+          <div class="completion-actions">
+            <router-link :to="'/deck/' + deckId" class="back-button">
+              <i class="fas fa-arrow-left"></i> Quay lại bộ thẻ
+            </router-link>
+            <button @click="restartStudy" class="restart-button">
+              <i class="fas fa-redo"></i> Học lại
+            </button>
+          </div>
         </div>
       </div>
     </template>
@@ -81,7 +138,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDeckStore } from '@/stores/deck'
 
@@ -110,6 +167,16 @@ const isLoading = ref(true)
 const deck = ref<Deck | null>(null)
 const currentCardIndex = ref(0)
 const showAnswer = ref(false)
+const slideDirection = ref<'left' | 'right' | null>(null)
+const touchStartX = ref(0)
+const touchEndX = ref(0)
+const showCompletion = ref(false)
+const studyTime = ref(0)
+const completedCards = ref(0)
+const studyTimer = ref<number | null>(null)
+const isDragging = ref(false)
+const mouseStartX = ref(0)
+const mouseCurrentX = ref(0)
 
 const currentCard = computed(() => {
   if (!deck.value) return null
@@ -124,20 +191,78 @@ const ratings = [
   { value: 3, label: 'Dễ nhớ', class: 'rating-easy' }
 ]
 
-const initStudy = async () => {
-  isLoading.value = true
-  try {
-    const result = await store.fetchDeckById(deckId)
-    if (!result) {
-      router.push('/')
-      return
+const confettiColors = [
+  '#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+  '#3b82f6', '#ec4899', '#14b8a6', '#f97316', '#84cc16'
+]
+
+const handleTouchStart = (e: TouchEvent) => {
+  touchStartX.value = e.touches[0].clientX
+}
+
+const handleTouchMove = (e: TouchEvent) => {
+  touchEndX.value = e.touches[0].clientX
+}
+
+const handleTouchEnd = () => {
+  const swipeDistance = touchEndX.value - touchStartX.value
+  const minSwipeDistance = 50 // Khoảng cách tối thiểu để xem là swipe
+
+  if (Math.abs(swipeDistance) > minSwipeDistance) {
+    if (swipeDistance > 0 && currentCardIndex.value > 0) {
+      // Swipe phải -> quay lại thẻ trước
+      slideDirection.value = 'right'
+      setTimeout(() => {
+        currentCardIndex.value--
+        showAnswer.value = false
+        slideDirection.value = null
+      }, 300)
+    } else if (swipeDistance < 0 && currentCardIndex.value < (deck.value?.cards.length || 0) - 1) {
+      // Swipe trái -> chuyển sang thẻ tiếp
+      slideDirection.value = 'left'
+      setTimeout(() => {
+        currentCardIndex.value++
+        showAnswer.value = false
+        slideDirection.value = null
+      }, 300)
     }
-    deck.value = result
-  } catch (error) {
-    console.error('Error fetching deck:', error)
-    router.push('/')
-  } finally {
-    isLoading.value = false
+  }
+}
+
+const handleKeyPress = (e: KeyboardEvent) => {
+  if (e.key === 'ArrowLeft' && currentCardIndex.value > 0) {
+    slideDirection.value = 'right'
+    setTimeout(() => {
+      currentCardIndex.value--
+      showAnswer.value = false
+      slideDirection.value = null
+    }, 300)
+  } else if (e.key === 'ArrowRight' && currentCardIndex.value < (deck.value?.cards.length || 0) - 1) {
+    slideDirection.value = 'left'
+    setTimeout(() => {
+      currentCardIndex.value++
+      showAnswer.value = false
+      slideDirection.value = null
+    }, 300)
+  }
+}
+
+const formatTime = (seconds: number) => {
+  const minutes = Math.floor(seconds / 60)
+  const remainingSeconds = seconds % 60
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
+}
+
+const startStudyTimer = () => {
+  studyTimer.value = window.setInterval(() => {
+    studyTime.value++
+  }, 1000)
+}
+
+const stopStudyTimer = () => {
+  if (studyTimer.value) {
+    clearInterval(studyTimer.value)
+    studyTimer.value = null
   }
 }
 
@@ -168,15 +293,25 @@ const rateCard = (rating: number) => {
     nextReview: nextReview
   })
 
+  completedCards.value++
   showAnswer.value = false
   if (currentCardIndex.value < deck.value?.cards.length) {
     currentCardIndex.value++
+  } else {
+    stopStudyTimer()
+    setTimeout(() => {
+      showCompletion.value = true
+    }, 500)
   }
 }
 
 const restartStudy = () => {
   currentCardIndex.value = 0
   showAnswer.value = false
+  showCompletion.value = false
+  studyTime.value = 0
+  completedCards.value = 0
+  startStudyTimer()
 }
 
 const speakText = (text: string) => {
@@ -184,6 +319,90 @@ const speakText = (text: string) => {
   utterance.lang = 'US English' // Đặt ngôn ngữ là tiếng Việt
   window.speechSynthesis.speak(utterance)
 }
+
+const initStudy = async () => {
+  isLoading.value = true
+  try {
+    const result = await store.fetchDeckById(deckId)
+    if (!result) {
+      router.push('/')
+      return
+    }
+    deck.value = result
+  } catch (error) {
+    console.error('Error fetching deck:', error)
+    router.push('/')
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const handleMouseDown = (e: MouseEvent) => {
+  isDragging.value = true
+  mouseStartX.value = e.clientX
+  mouseCurrentX.value = e.clientX
+}
+
+const handleMouseMove = (e: MouseEvent) => {
+  if (!isDragging.value) return
+  mouseCurrentX.value = e.clientX
+}
+
+const handleMouseUp = () => {
+  if (!isDragging.value) return
+  isDragging.value = false
+
+  const dragDistance = mouseCurrentX.value - mouseStartX.value
+  const minDragDistance = 50 // Khoảng cách tối thiểu để xem là kéo
+
+  if (Math.abs(dragDistance) > minDragDistance) {
+    if (dragDistance > 0 && currentCardIndex.value > 0) {
+      // Kéo sang phải -> quay lại thẻ trước
+      slideDirection.value = 'right'
+      setTimeout(() => {
+        currentCardIndex.value--
+        showAnswer.value = false
+        slideDirection.value = null
+      }, 300)
+    } else if (dragDistance < 0 && currentCardIndex.value < (deck.value?.cards.length || 0) - 1) {
+      // Kéo sang trái -> chuyển sang thẻ tiếp
+      slideDirection.value = 'left'
+      setTimeout(() => {
+        currentCardIndex.value++
+        showAnswer.value = false
+        slideDirection.value = null
+      }, 300)
+    }
+  }
+}
+
+const navigateCard = (direction: 'prev' | 'next') => {
+  if (direction === 'prev' && currentCardIndex.value > 0) {
+    slideDirection.value = 'right'
+    setTimeout(() => {
+      currentCardIndex.value--
+      showAnswer.value = false
+      slideDirection.value = null
+    }, 300)
+  } else if (direction === 'next' && currentCardIndex.value < (deck.value?.cards.length || 0) - 1) {
+    slideDirection.value = 'left'
+    setTimeout(() => {
+      currentCardIndex.value++
+      showAnswer.value = false
+      slideDirection.value = null
+    }, 300)
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeyPress)
+  startStudyTimer()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyPress)
+  stopStudyTimer()
+})
 
 // Initialize study session
 initStudy()
@@ -276,9 +495,11 @@ initStudy()
   position: relative;
   width: 100%;
   height: 400px;
-  cursor: pointer;
+  cursor: grab;
   transform-style: preserve-3d;
-  transition: transform 0.6s;
+  transition: all 0.3s ease;
+  will-change: transform;
+  touch-action: none;
 }
 
 .flashcard.flipped {
@@ -296,6 +517,10 @@ initStudy()
   padding: 2rem;
   display: flex;
   flex-direction: column;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 .card-face.back {
@@ -310,6 +535,10 @@ initStudy()
   font-size: 1.5rem;
   text-align: center;
   line-height: 1.5;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 .card-hint {
@@ -357,6 +586,14 @@ initStudy()
 .completion-message {
   text-align: center;
   padding: 4rem 0;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.completion-message.show-animation {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .completion-message h2 {
@@ -377,15 +614,25 @@ initStudy()
 
 .back-button,
 .restart-button {
-  padding: 0.75rem 1.5rem;
+  padding: 1rem 2rem;
   border-radius: 0.5rem;
   font-weight: 500;
-  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  font-size: 1.1rem;
 }
 
 .back-button {
   background-color: #f3f4f6;
   color: #374151;
+  text-decoration: none;
+}
+
+.back-button:hover {
+  background-color: #e5e7eb;
+  transform: translateY(-2px);
 }
 
 .restart-button {
@@ -393,6 +640,11 @@ initStudy()
   color: white;
   border: none;
   cursor: pointer;
+}
+
+.restart-button:hover {
+  background-color: #4f46e5;
+  transform: translateY(-2px);
 }
 
 .loading-state {
@@ -476,5 +728,227 @@ initStudy()
 
 .speak-button:active {
   transform: scale(0.95);
+}
+
+.navigation-hints {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.hint {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.hint i {
+  color: #6366f1;
+}
+
+.navigation-buttons {
+  display: flex;
+  justify-content: space-between;
+  position: absolute;
+  top: 50%;
+  left: -60px;
+  right: -60px;
+  transform: translateY(-50%);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.nav-button {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background-color: white;
+  border: none;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  color: #6366f1;
+  transition: all 0.2s ease;
+  pointer-events: auto;
+}
+
+.nav-button:hover:not(:disabled) {
+  transform: scale(1.1);
+  background-color: #e0e7ff;
+}
+
+.nav-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.flashcard {
+  position: relative;
+  width: 100%;
+  height: 400px;
+  cursor: grab;
+  transform-style: preserve-3d;
+  transition: all 0.3s ease;
+  will-change: transform;
+  touch-action: none;
+}
+
+.flashcard.dragging {
+  cursor: grabbing;
+  transition: none;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+.flashcard.slide-left {
+  transform: translateX(100px) rotate(-5deg);
+  opacity: 0;
+}
+
+.flashcard.slide-right {
+  transform: translateX(-100px) rotate(5deg);
+  opacity: 0;
+}
+
+.completion-content {
+  text-align: center;
+  padding: 3rem;
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.completion-title {
+  position: relative;
+  margin-bottom: 2rem;
+}
+
+.completion-icon {
+  font-size: 5rem;
+  color: #fbbf24;
+  margin-bottom: 1rem;
+  animation: bounce 1s ease infinite;
+  text-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.completion-icon i {
+  background: linear-gradient(45deg, #fbbf24, #f59e0b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.confetti-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.confetti {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  animation: confetti-fall 3s ease-in-out infinite;
+  opacity: 0.8;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-100%) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.completion-stats {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin: 2rem 0;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 0.5rem;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.stat-item i {
+  color: #6366f1;
+  font-size: 1.25rem;
+}
+
+.completion-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.back-button,
+.restart-button {
+  padding: 1rem 2rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  font-size: 1.1rem;
+}
+
+.back-button {
+  background-color: #f3f4f6;
+  color: #374151;
+  text-decoration: none;
+}
+
+.back-button:hover {
+  background-color: #e5e7eb;
+  transform: translateY(-2px);
+}
+
+.restart-button {
+  background-color: #6366f1;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.restart-button:hover {
+  background-color: #4f46e5;
+  transform: translateY(-2px);
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-20px) scale(1.1);
+  }
 }
 </style>
