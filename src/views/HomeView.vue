@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import DailySpeakingCard from '@/components/DailySpeakingCard.vue'
 </script>
 
 <template>
@@ -9,22 +10,10 @@
         Bắt đầu học ngay
       </router-link>
     </div>
-    <div class="features">
-      <div class="feature-card">
-        <i class="fas fa-layer-group"></i>
-        <h3>Quản lý bộ thẻ</h3>
-        <p>Tạo và tổ chức các bộ thẻ từ vựng theo chủ đề</p>
-      </div>
-      <div class="feature-card">
-        <i class="fas fa-sync-alt"></i>
-        <h3>Học thông minh</h3>
-        <p>Hệ thống ôn tập theo lịch trình tối ưu</p>
-      </div>
-      <div class="feature-card">
-        <i class="fas fa-chart-line"></i>
-        <h3>Theo dõi tiến độ</h3>
-        <p>Xem thống kê và đánh giá quá trình học tập</p>
-      </div>
+
+
+    <div class="daily-section">
+      <DailySpeakingCard />
     </div>
   </div>
 </template>
@@ -71,11 +60,7 @@
   transform: translateY(-2px);
 }
 
-.features {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
-}
+
 
 .feature-card {
   padding: 2rem;
@@ -99,5 +84,9 @@
 .feature-card p {
   color: #666;
   line-height: 1.5;
+}
+
+.daily-section {
+  margin-top: 3rem;
 }
 </style>
