@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import SpeakingView from '@/views/SpeakingView.vue'
+import AttendanceView from '../views/AttendanceView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -51,6 +52,12 @@ const router = createRouter({
       path: '/speaking',
       name: 'speaking',
       component: SpeakingView
+    },
+    {
+      path: '/attendance',
+      name: 'attendance',
+      component: AttendanceView,
+      meta: { requiresAuth: true }
     }
   ]
 })

@@ -114,7 +114,7 @@
             <router-link :to="'/deck/' + deckId" class="back-button">
               <i class="fas fa-arrow-left"></i> Quay lại bộ thẻ
             </router-link>
-       
+
           </div>
         </div>
       </div>
@@ -128,9 +128,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useDeckStore } from '@/stores/deck'
+import { useAttendanceStore } from '../stores/attendance'
 
 interface Card {
   _id: string
@@ -151,7 +152,8 @@ interface Deck {
 const route = useRoute()
 const router = useRouter()
 const store = useDeckStore()
-const deckId = route.params.deckId
+const attendanceStore = useAttendanceStore()
+const deckId = route.params.deckId as string
 
 const isLoading = ref(true)
 const deck = ref<Deck | null>(null)
@@ -223,68 +225,7 @@ const stopStudyTimer = () => {
   }
 }
 
-const rateCard = (rating: number) => {
-  if (!deck.value || !currentCard.value || !deckId) return
 
-  const card = currentCard.value
-  const now = new Date()
-  let nextReview: Date = now
-
-  switch (rating) {
-    case 1: // Khó
-      nextReview = new Date(now.getTime() + 1000 * 60 * 60 * 24) // 1 ngày
-      card.level = Math.max(1, card.level - 1)
-      break
-    case 2: // Tạm được
-      nextReview = new Date(now.getTime() + 1000 * 60 * 60 * 24 * 3) // 3 ngày
-      break
-    case 3: // Dễ
-      const interval = Math.pow(2, card.level) // Khoảng thời gian tăng theo cấp số nhân
-      nextReview = new Date(now.getTime() + 1000 * 60 * 60 * 24 * interval)
-      card.level++
-      break
-  }
-
-  store.updateCardReview(deckId, card._id, {
-    level: card.level,
-    nextReview: nextReview
-  })
-
-  completedCards.value++
-  showAnswer.value = false
-  if (currentCardIndex.value < deck.value?.cards.length) {
-    currentCardIndex.value++
-  } else {
-    stopStudyTimer()
-    setTimeout(() => {
-      showCompletion.value = true
-    }, 500)
-  }
-}
-
-const restartStudy = async () => {
-  if (!deck.value || !deckId) return
-
-  const now = new Date()
-  // Reset tất cả các thẻ về trạng thái đang học
-  for (const card of deck.value.cards) {
-    await store.updateCardReview(deckId, card._id, {
-      level: 1,
-      nextReview: now
-    })
-  }
-
-  // Reset các biến theo dõi
-  currentCardIndex.value = 0
-  showAnswer.value = false
-  showCompletion.value = false
-  studyTime.value = 0
-  completedCards.value = 0
-  startStudyTimer()
-
-  // Tải lại dữ liệu deck
-  await initStudy()
-}
 
 const speakText = (text: string) => {
   const utterance = new SpeechSynthesisUtterance(text)
@@ -390,8 +331,8 @@ const markCardStatus = async (status: 'learning' | 'known') => {
     stopStudyTimer()
     setTimeout(() => {
       currentCardIndex.value++
-
       showCompletion.value = true
+
     }, 500)
   }
 }
@@ -419,6 +360,17 @@ const resetAllCards = async () => {
   // Tải lại dữ liệu deck
   await initStudy()
 }
+
+
+// Thêm watcher cho currentCardIndex
+watch(currentCardIndex, async (newValue) => {
+  if (!deck.value) return
+  debugger
+  const learningCards = deck.value.cards.filter(c => !c.level || c.level === 1)
+  if (newValue >= learningCards.length) {
+    await attendanceStore.markAttendance(deckId)
+  }
+})
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeyPress)
@@ -855,9 +807,11 @@ initStudy()
   0% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
+
   100% {
     background-position: 0% 50%;
   }

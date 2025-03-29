@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import DailySpeakingCard from '@/components/DailySpeakingCard.vue'
+import WeeklyStreak from '@/components/WeeklyStreak.vue'
 </script>
 
 <template>
@@ -11,6 +12,9 @@ import DailySpeakingCard from '@/components/DailySpeakingCard.vue'
       </router-link>
     </div>
 
+    <div class="stats-section">
+      <WeeklyStreak />
+    </div>
 
     <div class="daily-section">
       <DailySpeakingCard />
@@ -88,5 +92,9 @@ import DailySpeakingCard from '@/components/DailySpeakingCard.vue'
 
 .daily-section {
   margin-top: 3rem;
+}
+
+.stats-section {
+  margin-bottom: 3rem;
 }
 </style>
