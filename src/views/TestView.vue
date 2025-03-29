@@ -24,6 +24,9 @@
       <div class="header">
         <h1>Kiểm tra - {{ deck?.name }}</h1>
         <div class="header-actions">
+          <button @click="shuffleQuestions" class="shuffle-button">
+            <i class="fas fa-random"></i> Trộn câu hỏi
+          </button>
           <router-link :to="'/deck/' + deckId" class="back-button">
             <i class="fa-solid fa-backward-step"></i> Quay lại bộ thẻ
           </router-link>
@@ -245,6 +248,15 @@ const navigateToQuestion = (index: number) => {
   userAnswer.value = ''
 }
 
+const shuffleQuestions = () => {
+  if (!deck.value) return
+  // Tạo một bản sao của mảng cards và trộn nó
+  deck.value.cards = [...deck.value.cards].sort(() => Math.random() - 0.5)
+  // Reset các biến theo dõi
+  currentQuestionIndex.value = 0
+  userAnswer.value = ''
+}
+
 // Initialize test session
 initTest()
 </script>
@@ -352,6 +364,25 @@ initTest()
 .header-actions {
   display: flex;
   gap: 1rem;
+}
+
+.shuffle-button {
+  padding: 0.75rem 1.5rem;
+  background-color: #8b5cf6;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.shuffle-button:hover {
+  background-color: #7c3aed;
+  transform: translateY(-2px);
 }
 
 .back-button {

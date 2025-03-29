@@ -6,6 +6,9 @@
         <button @click="resetAllCards" class="reset-button">
           <i class="fas fa-redo"></i> Học lại từ đầu
         </button>
+        <button @click="shuffleCards" class="shuffle-button">
+          <i class="fas fa-random"></i> Trộn thẻ
+        </button>
         <router-link :to="'/test/' + deckId" class="test-button">
           <i class="fas fa-pencil-alt"></i> Làm bài kiểm tra
         </router-link>
@@ -361,6 +364,14 @@ const resetAllCards = async () => {
   await initStudy()
 }
 
+const shuffleCards = () => {
+  if (!deck.value) return
+  // Tạo một bản sao của mảng cards và trộn nó
+  deck.value.cards = [...deck.value.cards].sort(() => Math.random() - 0.5)
+  // Reset các biến theo dõi
+  currentCardIndex.value = 0
+  showAnswer.value = false
+}
 
 // Thêm watcher cho currentCardIndex
 watch(currentCardIndex, async (newValue) => {
@@ -996,6 +1007,25 @@ initStudy()
 
 .reset-button:hover {
   background-color: #d97706;
+  transform: translateY(-2px);
+}
+
+.shuffle-button {
+  padding: 0.75rem 1.5rem;
+  background-color: #8b5cf6;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.shuffle-button:hover {
+  background-color: #7c3aed;
   transform: translateY(-2px);
 }
 </style>
