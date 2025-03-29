@@ -58,7 +58,7 @@
           </div>
 
           <div class="answer-section">
-            <input v-model="userAnswer" type="text" placeholder="Nhập câu trả lời của bạn..." class="answer-input">
+            <input v-model="userAnswer" type="text" placeholder="Nhập câu trả lời của bạn..." class="answer-input" @keyup.enter="nextQuestion">
 
             <div class="action-buttons">
               <button @click="nextQuestion" class="next-button">
