@@ -192,7 +192,10 @@ const learningCardsCount = computed(() => {
 })
 
 const handleKeyPress = (e: KeyboardEvent) => {
-  if (e.key === 'ArrowLeft' && currentCardIndex.value > 0) {
+  if (e.key === ' ') {
+    e.preventDefault() // Prevent page scrolling
+    showAnswer.value = !showAnswer.value
+  } else if (e.key === 'ArrowLeft' && currentCardIndex.value > 0) {
     slideDirection.value = 'right'
     setTimeout(() => {
       currentCardIndex.value--
