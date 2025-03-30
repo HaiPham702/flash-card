@@ -24,9 +24,9 @@
       <div class="header">
         <h1>Kiểm tra - {{ deck?.name }}</h1>
         <div class="header-actions">
-          <button @click="shuffleQuestions" class="shuffle-button">
+          <!-- <button @click="shuffleQuestions" class="shuffle-button">
             <i class="fas fa-random"></i> Trộn câu hỏi
-          </button>
+          </button> -->
           <router-link :to="'/deck/' + deckId" class="back-button">
             <i class="fa-solid fa-backward-step"></i> Quay lại bộ thẻ
           </router-link>

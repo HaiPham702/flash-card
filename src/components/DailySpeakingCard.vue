@@ -11,8 +11,11 @@
       </router-link>
     </div>
 
-    <div v-if="isLoading" class="loading-state">
-      <div class="loading-spinner"></div>
+    <div v-if="isLoading" class="loading-overlay">
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <p>Đang tải chủ đề speaking...</p>
+      </div>
     </div>
 
     <div v-else-if="error" class="error-state">
@@ -59,11 +62,21 @@ import { useSpeakingStore } from '@/stores/speaking'
 import type { SpeakingTopic } from '@/types/speaking'
 
 const store = useSpeakingStore()
-const { currentTopic: currentTopicStore, isLoading, error, fetchTodayTopic, generateNewTopic } = store
+const { currentTopic: currentTopicStore, isLoading: storeLoading, error, fetchTodayTopic, generateNewTopic } = store
 const currentTopic = ref<SpeakingTopic | null>(null)
+const isLoading = ref(false)
 
 onMounted(async () => {
-  currentTopic.value = currentTopicStore ? currentTopicStore : await fetchTodayTopic()
+  if (!currentTopicStore) {
+    isLoading.value = true
+    try {
+      currentTopic.value = await fetchTodayTopic()
+    } finally {
+      isLoading.value = false
+    }
+  } else {
+    currentTopic.value = currentTopicStore
+  }
 })
 </script>
 
@@ -108,10 +121,29 @@ onMounted(async () => {
   color: #4f46e5;
 }
 
-.loading-state {
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.9);
   display: flex;
   justify-content: center;
-  padding: 2rem;
+  align-items: center;
+  z-index: 1000;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.loading-content p {
+  color: #4b5563;
+  font-size: 1rem;
 }
 
 .loading-spinner {
