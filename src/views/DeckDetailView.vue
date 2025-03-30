@@ -487,6 +487,12 @@ const onDragEnd = async () => {
   margin-bottom: 2rem;
   flex-wrap: wrap;
   gap: 1rem;
+  position: sticky;
+  top: 0;
+  background-color: white;
+  padding: 1rem 0;
+  z-index: 10;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .deck-info {
