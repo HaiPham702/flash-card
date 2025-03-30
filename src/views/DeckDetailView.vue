@@ -412,6 +412,7 @@ const fetchAISuggestions = (query: string) => {
     isLoadingSuggestions.value = true
     showSuggestions.value = false
     try {
+      // Tìm kiếm gợi ý từ AI
       const prompt = `Nghĩa của ${query} là gì, chỉ bao gồm nghĩa ngắn gọn và không có từ này trong câu trả lời. Theo format sau: (dạng từ) nghĩa của từ`
       const suggestions = await generateSuggestions(prompt)
       if (Array.isArray(suggestions)) {
@@ -424,6 +425,10 @@ const fetchAISuggestions = (query: string) => {
         aiSuggestions.value = []
       }
       showSuggestions.value = true
+
+      // Tự động tìm kiếm hình ảnh liên quan
+      searchQuery.value = query
+      searchImages()
     } catch (error) {
       console.error('Error getting suggestions:', error)
     } finally {
