@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import SpeakingView from '@/views/SpeakingView.vue'
 import AttendanceView from '../views/AttendanceView.vue'
+import WritingView from '../views/WritingView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -58,6 +59,14 @@ const router = createRouter({
       name: 'attendance',
       component: AttendanceView,
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/writing',
+      name: 'writing',
+      component: WritingView,
+      meta: {
+        title: 'IELTS Writing Practice'
+      }
     }
   ]
 })

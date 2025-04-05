@@ -27,6 +27,9 @@ const handleLogout = () => {
     <div class="nav-links">
       <template v-if="authStore.isAuthenticated">
         <router-link to="/decks">Bộ thẻ</router-link>
+        <router-link to="/speaking">Speaking</router-link>
+        <router-link to="/writing">Writing</router-link>
+        <router-link to="/attendance">Điểm danh</router-link>
         <div class="user-menu">
           <span class="user-name">{{ authStore.currentUser?.name }}</span>
           <button @click="handleLogout" class="logout-button">
