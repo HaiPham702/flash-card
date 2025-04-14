@@ -418,6 +418,7 @@ const fetchAISuggestions = (query: string) => {
 2. Ví dụ: [câu ví dụ sử dụng từ "${query}"]
 
 Lưu ý:
+- bằng tiếng anh
 - Không bao gồm từ "${query}" trong phần giải thích nghĩa
 - Câu ví dụ phải tự nhiên và dễ hiểu
 - Chỉ trả về kết quả theo format trên, không thêm bất kỳ nội dung nào khác`
