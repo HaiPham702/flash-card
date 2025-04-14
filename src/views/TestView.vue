@@ -58,7 +58,8 @@
           </div>
 
           <div class="answer-section">
-            <input v-model="userAnswer" type="text" placeholder="Nhập câu trả lời của bạn..." class="answer-input" @keyup.enter="nextQuestion">
+            <input v-model="userAnswer" type="text" placeholder="Nhập câu trả lời của bạn..." class="answer-input"
+              @keyup.enter="nextQuestion">
 
             <div class="action-buttons">
               <button @click="nextQuestion" class="next-button">
@@ -73,10 +74,11 @@
         <h2>Kết quả kiểm tra</h2>
         <div class="questions-review">
           <h3>Chi tiết bài làm:</h3>
-          <div v-for="(card, index) in deck?.cards" :key="card.id" class="question-review" :class="{
-            'correct': questionScores[index] === 1,
-            'incorrect': questionScores[index] === 0
-          }">
+          <div v-for="(card, index) in deck?.cards" :key="card.id" :id="`question-${index}`" class="question-review"
+            :class="{
+              'correct': questionScores[index] === 1,
+              'incorrect': questionScores[index] === 0
+            }">
             <div class="question-header">
               <h4>Câu {{ index + 1 }}</h4>
               <div class="score-input">
@@ -245,7 +247,15 @@ const restartTest = () => {
 
 const navigateToQuestion = (index: number) => {
   currentQuestionIndex.value = index
-  userAnswer.value = ''
+  userAnswer.value = answers.value[index] || ''
+
+  // Scroll to the question review if in results view
+  if (showResults.value) {
+    const questionElement = document.getElementById(`question-${index}`)
+    if (questionElement) {
+      questionElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
 }
 
 const shuffleQuestions = () => {
@@ -266,7 +276,7 @@ initTest()
   display: flex;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+  padding-top: 1rem;
   gap: 2rem;
 }
 
@@ -275,8 +285,13 @@ initTest()
   background-color: white;
   border-radius: 1rem;
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  padding: 1.5rem;
+  padding: 1rem;
   height: fit-content;
+  position: sticky;
+  top: 2rem;
+  align-self: flex-start;
+  max-height: calc(100vh - 150px);
+  overflow: auto;
 }
 
 .sidebar h3 {

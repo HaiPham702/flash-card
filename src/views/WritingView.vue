@@ -308,7 +308,6 @@ const cancelWriting = () => {
 
 // Submit essay
 const submitEssay = async () => {
-    debugger
     const userId = authStore.currentUser?.id;
     if (!userId) {
         notificationStore.error('Please log in to submit essays.');

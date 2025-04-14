@@ -379,7 +379,6 @@ const shuffleCards = () => {
 // Thêm watcher cho currentCardIndex
 watch(currentCardIndex, async (newValue) => {
   if (!deck.value) return
-  debugger
   const learningCards = deck.value.cards.filter(c => !c.level || c.level === 1)
   if (newValue >= learningCards.length) {
     await attendanceStore.markAttendance(deckId)

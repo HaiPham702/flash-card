@@ -86,75 +86,76 @@
     <div v-if="showAddCardModal || editingCard" class="modal-overlay">
       <div class="modal">
         <h2>{{ editingCard ? 'Sửa thẻ' : 'Thêm thẻ mới' }}</h2>
-        <form @submit.prevent="saveCard">
-          <div class="form-group">
-            <label>Mặt trước:</label>
-            <input v-model="currentCard.front" type="text" placeholder="Nhập nội dung mặt trước..." class="form-input"
-              @input="fetchAISuggestions(currentCard.front)" required>
-          </div>
+        <div class="modal-content">
+          <form @submit.prevent="saveCard">
+            <div class="form-group">
+              <label>Mặt trước:</label>
+              <input v-model="currentCard.front" type="text" placeholder="Nhập nội dung mặt trước..." class="form-input"
+                @input="fetchAISuggestions(currentCard.front)" required>
+            </div>
 
-          <div class="form-group">
-            <label>Mặt sau:</label>
-            <div class="back-content-container">
-              <textarea v-model="currentCard.back" rows="3" placeholder="Nhập nội dung mặt sau..." class="form-textarea"
-                required></textarea>
+            <div class="form-group">
+              <label>Mặt sau:</label>
+              <div class="back-content-container">
+                <textarea v-model="currentCard.back" rows="3" placeholder="Nhập nội dung mặt sau..." class="form-textarea"
+                  required></textarea>
 
-              <div v-if="isLoadingSuggestions" class="suggestions-loading">
-                <i class="fas fa-spinner fa-spin"></i>
-                <span>Đang tạo gợi ý...</span>
-              </div>
-
-              <div v-if="showSuggestions && aiSuggestions.length > 0" class="suggestions-dropdown">
-                <div class="suggestions-header">
-                  <span>Gợi ý từ AI:</span>
-                  <button type="button" @click="showSuggestions = false" class="close-suggestions">
-                    <i class="fas fa-times"></i>
-                  </button>
+                <div v-if="isLoadingSuggestions" class="suggestions-loading">
+                  <i class="fas fa-spinner fa-spin"></i>
+                  <span>Đang tạo gợi ý...</span>
                 </div>
-                <div class="suggestions-list">
-                  <div v-for="(suggestion, index) in aiSuggestions" :key="index" class="suggestion-item"
-                    @click="selectSuggestion(suggestion)">
-                    {{ suggestion }}
+
+                <div v-if="showSuggestions && aiSuggestions.length > 0" class="suggestions-dropdown">
+                  <div class="suggestions-header">
+                    <span>Gợi ý từ AI:</span>
+                    <button type="button" @click="showSuggestions = false" class="close-suggestions">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                  <div class="suggestions-list">
+                    <div v-for="(suggestion, index) in aiSuggestions" :key="index" class="suggestion-item"
+                      @click="selectSuggestion(suggestion)">
+                      {{ suggestion }}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div class="form-group">
-            <label>Hình ảnh</label>
-            <div class="image-search">
-              <input v-model="searchQuery" @input="searchImages" placeholder="Tìm kiếm hình ảnh..."
-                class="image-search-input">
+            <div class="form-group">
+              <label>Hình ảnh</label>
+              <div class="image-search">
+                <input v-model="searchQuery" @input="searchImages" placeholder="Tìm kiếm hình ảnh..."
+                  class="image-search-input">
 
-              <div v-if="selectedImage" class="selected-image">
-                <img :src="selectedImage" alt="Selected image">
-                <button type="button" @click="selectedImage = null" class="remove-image">
-                  <i class="fas fa-times"></i>
-                </button>
-              </div>
-              <div v-if="isSearchingImages" class="loading-spinner">
-                <i class="fas fa-spinner fa-spin"></i>
-                <span>Đang tìm kiếm...</span>
-              </div>
-              <div v-if="searchResults.length > 0" class="image-results">
-                <div v-for="result in searchResults" :key="result.id" class="image-result"
-                  @click="selectImage(result.urls.regular)">
-                  <img :src="result.urls.thumb" :alt="result.alt_description">
+                <div v-if="selectedImage" class="selected-image">
+                  <img :src="selectedImage" alt="Selected image">
+                  <button type="button" @click="selectedImage = null" class="remove-image">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+                <div v-if="isSearchingImages" class="loading-spinner">
+                  <i class="fas fa-spinner fa-spin"></i>
+                  <span>Đang tìm kiếm...</span>
+                </div>
+                <div v-if="searchResults.length > 0" class="image-results">
+                  <div v-for="result in searchResults" :key="result.id" class="image-result"
+                    @click="selectImage(result.urls.regular)">
+                    <img :src="result.urls.thumb" :alt="result.alt_description">
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-
-          <div class="modal-actions">
-            <button type="button" @click="cancelEdit" class="cancel-button">
-              Hủy
-            </button>
-            <button type="submit" class="submit-button">
-              {{ editingCard ? 'Lưu thay đổi' : 'Thêm thẻ' }}
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
+        <div class="modal-actions">
+          <button type="button" @click="cancelEdit" class="cancel-button">
+            Hủy
+          </button>
+          <button type="submit" @click="saveCard" class="submit-button">
+            {{ editingCard ? 'Lưu thay đổi' : 'Thêm thẻ' }}
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -758,15 +759,29 @@ const onDragEnd = async () => {
 .modal {
   background-color: white;
   border-radius: 1rem;
-  padding: 2rem;
   width: 100%;
   max-width: 600px;
-  max-height: 90vh;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-content {
+  padding: 1.5rem;
   overflow-y: auto;
+  flex: 1;
+}
+
+.modal h2 {
+  margin: 0;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 1.25rem;
+  font-weight: 600;
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .form-group label {
@@ -813,6 +828,8 @@ const onDragEnd = async () => {
   padding: 0.5rem 1rem;
   background-color: #f9fafb;
   border-bottom: 1px solid #d1d5db;
+  position: sticky;
+  top: 0;
 }
 
 .close-suggestions {
@@ -820,6 +837,16 @@ const onDragEnd = async () => {
   border: none;
   color: #6b7280;
   cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.close-suggestions:hover {
+  background-color: #e5e7eb;
 }
 
 .suggestions-list {
@@ -827,8 +854,9 @@ const onDragEnd = async () => {
 }
 
 .suggestion-item {
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
   cursor: pointer;
+  transition: background-color 0.2s;
 }
 
 .suggestion-item:hover {
@@ -836,7 +864,7 @@ const onDragEnd = async () => {
 }
 
 .suggestions-loading {
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
   background-color: white;
   border: 1px solid #d1d5db;
   border-radius: 0.5rem;
@@ -852,6 +880,7 @@ const onDragEnd = async () => {
 
 .image-search {
   position: relative;
+  margin-bottom: 1rem;
 }
 
 .image-search-input {
@@ -883,10 +912,11 @@ const onDragEnd = async () => {
   cursor: pointer;
   border-radius: 0.3rem;
   overflow: hidden;
+  transition: transform 0.2s;
 }
 
 .image-result:hover {
-  opacity: 0.8;
+  transform: scale(1.02);
 }
 
 .image-result img {
@@ -898,12 +928,14 @@ const onDragEnd = async () => {
 .selected-image {
   margin-top: 1rem;
   position: relative;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .selected-image img {
   max-width: 100%;
   max-height: 200px;
-  border-radius: 0.5rem;
   display: block;
 }
 
@@ -921,13 +953,18 @@ const onDragEnd = async () => {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.remove-image:hover {
+  background-color: rgba(0, 0, 0, 0.7);
 }
 
 .loading-spinner {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
   background-color: white;
   border: 1px solid #d1d5db;
   border-radius: 0.5rem;
@@ -937,7 +974,10 @@ const onDragEnd = async () => {
 .modal-actions {
   display: flex;
   gap: 1rem;
-  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background-color: white;
+  border-top: 1px solid #e5e7eb;
+  border-radius: 0 0 1rem 1rem;
 }
 
 .cancel-button,
@@ -948,6 +988,7 @@ const onDragEnd = async () => {
   border: none;
   cursor: pointer;
   font-weight: 500;
+  transition: background-color 0.2s;
 }
 
 .cancel-button {
@@ -955,9 +996,17 @@ const onDragEnd = async () => {
   color: #374151;
 }
 
+.cancel-button:hover {
+  background-color: #e5e7eb;
+}
+
 .submit-button {
   background-color: #6366f1;
   color: white;
+}
+
+.submit-button:hover {
+  background-color: #4f46e5;
 }
 
 @media (max-width: 768px) {
