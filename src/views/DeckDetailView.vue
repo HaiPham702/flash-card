@@ -414,14 +414,10 @@ const fetchAISuggestions = (query: string) => {
     try {
       // Tìm kiếm gợi ý từ AI
       const prompt = `Hãy giải thích nghĩa của từ "${query}" theo format sau:
-1. (dạng từ) nghĩa ngắn gọn của từ
-2. Ví dụ: [câu ví dụ sử dụng từ "${query}"]
-
-Lưu ý:
-- bằng tiếng anh
-- Không bao gồm từ "${query}" trong phần giải thích nghĩa
-- Câu ví dụ phải tự nhiên và dễ hiểu
-- Chỉ trả về kết quả theo format trên, không thêm bất kỳ nội dung nào khác`
+                      (dạng từ) nghĩa ngắn gọn của từ
+                      Lưu ý:
+                      - dạng từ: bằng tiếng anh
+                      - nghĩa ngắn gọn của từ: bằng tiếng việt`
       const suggestions = await generateSuggestions(prompt)
       if (Array.isArray(suggestions)) {
         aiSuggestions.value = suggestions
