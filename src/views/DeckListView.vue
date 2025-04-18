@@ -22,40 +22,46 @@
 
     <div v-else class="reorder-hint" v-if="!isLoading && decks.length > 1">
       <i class="fas fa-info-circle"></i>
-      Kéo thả để sắp xếp lại bộ thẻ của bạn
+      Kéo thả để sắp xếp lại bộ thẻ trong từng nhóm tháng
     </div>
 
-    <draggable v-model="sortableDecks" class="decks-grid" item-key="_id" @end="onDragEnd"
-      v-if="!isLoading && decks.length > 0" :animation="200" ghost-class="ghost-deck" handle=".deck-drag-handle">
-      <template #item="{ element, index }">
-        <div class="deck-card">
-          <div class="deck-drag-handle">
-            <i class="fas fa-grip-lines"></i>
-          </div>
-          <div class="deck-info">
-            <h3>{{ element.name }}</h3>
-            <p>{{ element.description }}</p>
-            <div class="deck-stats">
-              <span><i class="fa-solid fa-cards-blank"></i> {{ element.cards.length }} thẻ</span>
-              <span><i class="fas fa-clock"></i> {{ element.dueCards }} thẻ cần ôn tập</span>
+    <div v-if="!isLoading && decks.length > 0" class="month-groups">
+      <div v-for="(group, monthKey) in decksByMonth" :key="monthKey" class="month-group">
+        <h2 class="month-title">{{ formatMonthTitle(String(monthKey)) }}</h2>
+        
+        <draggable v-model="group.decks" class="decks-grid" item-key="_id" @end="(event) => onDragEnd(event, String(monthKey))"
+          :animation="200" ghost-class="ghost-deck" handle=".deck-drag-handle" :group="{ name: String(monthKey) }">
+          <template #item="{ element, index }">
+            <div class="deck-card">
+              <div class="deck-drag-handle">
+                <i class="fas fa-grip-lines"></i>
+              </div>
+              <div class="deck-info">
+                <h3>{{ element.name }}</h3>
+                <p>{{ element.description }}</p>
+                <div class="deck-stats">
+                  <span><i class="fa-solid fa-cards-blank"></i> {{ element.cards.length }} thẻ</span>
+                  <span><i class="fas fa-clock"></i> {{ element.dueCards }} thẻ cần ôn tập</span>
+                </div>
+                <div class="deck-meta">
+                  <span><i class="fas fa-user"></i> Tạo bởi: {{ element.creator?.name }}</span>
+                  <span><i class="fas fa-clock"></i> Tạo: {{ new Date(element.createdAt).toLocaleDateString() }}</span>
+                </div>
+              </div>
+              <div class="deck-actions">
+                <router-link :to="'/study/' + element._id" class="study-button">
+                  <i class="fa-solid fa-play"></i>
+                  Học ngay
+                </router-link>
+                <router-link :to="'/deck/' + element._id" class="edit-button">
+                  <i class="fas fa-edit"></i> Chỉnh sửa
+                </router-link>
+              </div>
             </div>
-            <div class="deck-meta">
-              <span><i class="fas fa-user"></i> Tạo bởi: {{ element.creator?.name }}</span>
-              <span><i class="fas fa-clock"></i> Cập nhật: {{ new Date(element.updatedAt).toLocaleDateString() }}</span>
-            </div>
-          </div>
-          <div class="deck-actions">
-            <router-link :to="'/study/' + element._id" class="study-button">
-              <i class="fa-solid fa-play"></i>
-              Học ngay
-            </router-link>
-            <router-link :to="'/deck/' + element._id" class="edit-button">
-              <i class="fas fa-edit"></i> Chỉnh sửa
-            </router-link>
-          </div>
-        </div>
-      </template>
-    </draggable>
+          </template>
+        </draggable>
+      </div>
+    </div>
 
     <!-- Modal tạo bộ thẻ mới -->
     <div v-if="showCreateDeckModal" class="modal-overlay">
@@ -100,23 +106,51 @@ const newDeck = ref({
 
 const decks = computed(() => store.decks)
 
-// Create a sorted list for the draggable component
-const sortableDecks = computed({
-  get: () => {
-    return [...decks.value].sort((a, b) => {
-      const orderA = a.order !== undefined ? a.order : 0
-      const orderB = b.order !== undefined ? b.order : 0
-      return orderA - orderB
-    })
-  },
-  set: (value) => {
-    // No need to set anything here as we'll use the drag end event
-    store.decks = value.map((deck, index) => ({
-      ...deck,
-      order: index
-    }))
-  }
-})
+// Compute deck groups by month
+const decksByMonth = computed(() => {
+  const groupedDecks: Record<string, { decks: any[] }> = {};
+  
+  decks.value.forEach(deck => {
+    const createDate = new Date(deck.createdAt);
+    const monthKey = `${createDate.getFullYear()}-${createDate.getMonth() + 1}`;
+    
+    if (!groupedDecks[monthKey]) {
+      groupedDecks[monthKey] = { decks: [] };
+    }
+    
+    groupedDecks[monthKey].decks.push(deck);
+  });
+  
+  // Sort decks within each group by order
+  Object.keys(groupedDecks).forEach(monthKey => {
+    groupedDecks[monthKey].decks.sort((a, b) => {
+      const orderA = a.order !== undefined ? a.order : 0;
+      const orderB = b.order !== undefined ? b.order : 0;
+      return orderA - orderB;
+    });
+  });
+  
+  // Sort month groups from newest to oldest
+  return Object.fromEntries(
+    Object.entries(groupedDecks).sort((a, b) => b[0].localeCompare(a[0]))
+  );
+});
+
+// Format month titles for display
+const formatMonthTitle = (monthKey: string) => {
+  const parts = monthKey.split('-');
+  const year = parseInt(parts[0], 10);
+  const month = parseInt(parts[1], 10) - 1;
+  const date = new Date(year, month);
+  
+  // Vietnamese month names
+  const monthNames = [
+    'Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
+    'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'
+  ];
+  
+  return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+};
 
 const fetchDecks = async () => {
   isLoading.value = true
@@ -143,29 +177,31 @@ const createDeck = async () => {
   }
 }
 
-const onDragEnd = async () => {
-  if (!sortableDecks.value.length) return
+const onDragEnd = async (event: any, monthKey: string) => {
+  const monthGroup = decksByMonth.value[monthKey];
+  if (!monthGroup || !monthGroup.decks.length) return;
 
   // Create an array of deck IDs and new orders to update on the server
-  const deckOrders = sortableDecks.value.map((deck, index) => {
-    const deckId = deck._id || deck.id
-    console.log('Processing deck:', { id: deckId, name: deck.name, index })
+  // We only update the order within the same month group
+  const deckOrders = monthGroup.decks.map((deck, index) => {
+    const deckId = deck._id || deck.id;
+    console.log('Processing deck:', { id: deckId, name: deck.name, index, monthGroup: monthKey });
     return {
       id: deckId,
       order: index
-    }
-  })
+    };
+  });
 
   console.log('Reordering decks with:', deckOrders);
 
   // Update the orders on the server
-  isLoading.value = true
+  isLoading.value = true;
   try {
-    await store.reorderDecks(deckOrders)
+    await store.reorderDecks(deckOrders);
   } catch (error) {
     console.error('Error reordering decks:', error);
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
 }
 </script>
@@ -411,5 +447,60 @@ const onDragEnd = async () => {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Month group styles */
+.month-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.month-group {
+  background-color: #f9fafb;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.month-title {
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e5e7eb;
+  color: #4b5563;
+  font-size: 1.25rem;
+}
+
+.decks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.deck-card {
+  background-color: white;
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  padding: 1.5rem;
+  position: relative;
+}
+
+.deck-drag-handle {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  color: #aaa;
+  cursor: grab;
+  padding: 5px;
+}
+
+.deck-drag-handle:hover {
+  color: #666;
+}
+
+.ghost-deck {
+  opacity: 0.5;
+  background: #f3f4f6;
+  border: 2px dashed #6366f1;
 }
 </style>
