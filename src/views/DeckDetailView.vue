@@ -414,7 +414,7 @@ const fetchAISuggestions = (query: string) => {
     showSuggestions.value = false
     try {
       // Tìm kiếm gợi ý từ AI
-      const prompt = `Hãy giải thích nghĩa của từ "${query}" theo format sau:
+      const prompt = `Nghĩa của từ: ${query} ngắn gọn chỉ bao gồm định nghĩa không chứa từ đó trong câu trả lời với format sau:
                       (dạng từ) nghĩa ngắn gọn của từ
                       Lưu ý:
                       - dạng từ: bằng tiếng anh
@@ -443,7 +443,7 @@ const fetchAISuggestions = (query: string) => {
 }
 
 const selectSuggestion = (suggestion: string) => {
-  currentCard.value.back = suggestion
+  currentCard.value.back = suggestion?.trim()
   showSuggestions.value = false
 }
 
@@ -809,6 +809,7 @@ const onDragEnd = async () => {
 
 .suggestions-dropdown {
   position: absolute;
+  z-index: 1000000;
   top: 100%;
   left: 0;
   right: 0;
