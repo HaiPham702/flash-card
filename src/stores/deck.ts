@@ -12,6 +12,7 @@ export interface Card {
     image?: string
     lastReview?: Date
     nextReview?: Date
+    pronunciation?: string
     level: number
     order?: number
 }

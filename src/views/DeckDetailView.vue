@@ -58,6 +58,10 @@
                 <p>{{ element.back }}</p>
               </div>
             </div>
+            <div v-if="element.pronunciation" class="card-pronunciation">
+              <h3>Phát âm</h3>
+              <p>{{ element.pronunciation }}</p>
+            </div>
             <div v-if="element.image" class="card-image-container">
               <img :src="element.image" alt="Card image" class="card-image">
             </div>
@@ -123,6 +127,11 @@
             </div>
 
             <div class="form-group">
+              <label>Phát âm:</label>
+              <input v-model="currentCard.pronunciation" type="text" placeholder="Nhập cách phát âm..." class="form-input">
+            </div>
+
+            <div class="form-group">
               <label>Hình ảnh</label>
               <div class="image-search">
                 <input v-model="searchQuery" @input="searchImages" placeholder="Tìm kiếm hình ảnh..."
@@ -177,6 +186,7 @@ interface Card {
   front: string
   back: string
   image?: string
+  pronunciation?: string
   lastReview?: Date
   nextReview?: Date
   level: number
@@ -197,7 +207,8 @@ const editingDeckInfo = ref(false)
 const currentCard = ref({
   front: '',
   back: '',
-  image: ''
+  image: '',
+  pronunciation: ''
 })
 
 const editedDeckInfo = ref({
@@ -265,6 +276,7 @@ const initData = async () => {
           front: card.front,
           back: card.back,
           image: card.image,
+          pronunciation: card.pronunciation,
           lastReview: card.lastReview,
           nextReview: card.nextReview,
           level: card.level,
@@ -313,7 +325,8 @@ const editCard = (card: Card) => {
   currentCard.value = {
     front: card.front,
     back: card.back,
-    image: card.image || ''
+    image: card.image || '',
+    pronunciation: card.pronunciation || ''
   }
   selectedImage.value = card.image || null
 }
@@ -321,7 +334,7 @@ const editCard = (card: Card) => {
 const cancelEdit = () => {
   showAddCardModal.value = false
   editingCard.value = null
-  currentCard.value = { front: '', back: '', image: '' }
+  currentCard.value = { front: '', back: '', image: '', pronunciation: '' }
   selectedImage.value = null
   searchQuery.value = ''
   searchResults.value = []
@@ -335,6 +348,7 @@ const saveCard = async () => {
     front: currentCard.value.front,
     back: currentCard.value.back,
     image: selectedImage.value || '',
+    pronunciation: currentCard.value.pronunciation || '',
     level: 1
   }
 
@@ -486,8 +500,6 @@ const onDragEnd = async () => {
 }
 
 .header {
-  display: flex;
-  justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 2rem;
   flex-wrap: wrap;
@@ -550,6 +562,7 @@ const onDragEnd = async () => {
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
+  margin-top: 1rem;
 }
 
 .add-button,
@@ -1008,6 +1021,18 @@ const onDragEnd = async () => {
 
 .submit-button:hover {
   background-color: #4f46e5;
+}
+
+.card-pronunciation {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.card-pronunciation h3 {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
 }
 
 @media (max-width: 768px) {

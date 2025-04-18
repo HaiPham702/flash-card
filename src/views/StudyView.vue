@@ -59,6 +59,7 @@
             <div class="card-content">
               <div class="content-wrapper">
                 <p>{{ currentCard.front }}</p>
+                <p v-if="currentCard.pronunciation" class="pronunciation">{{ currentCard.pronunciation }}</p>
                 <img v-if="currentCard.image" :src="currentCard.image" alt="Card image" class="card-image">
               </div>
             </div>
@@ -144,6 +145,7 @@ interface Card {
   lastReview?: Date
   nextReview?: Date
   level: number
+  pronunciation?: string
 }
 
 interface Deck {
@@ -1029,5 +1031,13 @@ initStudy()
 .shuffle-button:hover {
   background-color: #7c3aed;
   transform: translateY(-2px);
+}
+
+.card-content .pronunciation {
+  font-style: italic;
+  color: #6b7280;
+  font-size: 1.2rem;
+  margin-top: -0.5rem;
+  margin-bottom: 0.5rem;
 }
 </style>
