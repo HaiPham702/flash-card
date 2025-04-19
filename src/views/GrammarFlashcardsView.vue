@@ -171,13 +171,13 @@ const description = computed(() => {
 
 const currentCard = computed(() => {
   if (cards.value.length === 0) {
-    return { front: '', back: '' }
+    return { front: '', back: '' } as FlashCard
   }
   return cards.value[currentIndex.value]
 })
 
 const isLastCard = computed(() => {
-  return currentIndex.value === cards.length - 1
+  return currentIndex.value === cards.value.length - 1
 })
 
 // Actions

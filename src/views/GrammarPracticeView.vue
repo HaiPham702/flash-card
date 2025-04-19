@@ -36,11 +36,11 @@
           </div>
 
           <!-- Multiple Choice Question -->
-          <div v-if="currentQuestion.type === 'multiple-choice'" class="question-content">
-            <div class="question-text" v-html="currentQuestion.question"></div>
+          <div v-if="currentQuestion?.type === 'multiple-choice'" class="question-content">
+            <div class="question-text" v-html="currentQuestion?.question"></div>
             <div class="options-container">
               <div 
-                v-for="(option, index) in currentQuestion.options" 
+                v-for="(option, index) in currentQuestion?.options" 
                 :key="index"
                 class="option"
                 :class="{
@@ -57,8 +57,8 @@
           </div>
 
           <!-- Fill in the Blanks Question -->
-          <div v-else-if="currentQuestion.type === 'fill-blanks'" class="question-content">
-            <div class="question-text" v-html="currentQuestion.question"></div>
+          <div v-else-if="currentQuestion?.type === 'fill-blanks'" class="question-content">
+            <div class="question-text" v-html="currentQuestion?.question"></div>
             <div class="fill-blank-container">
               <input 
                 type="text" 
@@ -73,8 +73,8 @@
           </div>
 
           <!-- Error Correction Question -->
-          <div v-else-if="currentQuestion.type === 'error-correction'" class="question-content">
-            <div class="question-text" v-html="currentQuestion.question"></div>
+          <div v-else-if="currentQuestion?.type === 'error-correction'" class="question-content">
+            <div class="question-text" v-html="currentQuestion?.question"></div>
             <div class="error-correction-container">
               <div class="error-instruction">Hãy sửa lỗi ngữ pháp trong câu trên:</div>
               <input 
@@ -89,8 +89,8 @@
           </div>
 
           <!-- Sentence Transformation Question -->
-          <div v-else-if="currentQuestion.type === 'sentence-transformation'" class="question-content">
-            <div class="question-text" v-html="currentQuestion.question"></div>
+          <div v-else-if="currentQuestion?.type === 'sentence-transformation'" class="question-content">
+            <div class="question-text" v-html="currentQuestion?.question"></div>
             <div class="transformation-container">
               <textarea 
                 v-model="transformationAnswer" 
@@ -120,7 +120,7 @@
             </button>
           </div>
 
-          <div v-if="showAnswer" class="answer-feedback">
+          <div v-if="showAnswer && currentQuestion" class="answer-feedback">
             <div 
               class="feedback-content" 
               :class="{'correct-feedback': isCorrectAnswer, 'incorrect-feedback': !isCorrectAnswer}"
@@ -253,9 +253,7 @@ const description = computed(() => {
 
 // Current question
 const currentQuestion = computed(() => {
-  if (questions.value.length === 0 || currentIndex.value >= questions.value.length) {
-    return null
-  }
+  if (questions.value.length === 0) return null
   return questions.value[currentIndex.value]
 })
 
@@ -264,43 +262,24 @@ const isLastQuestion = computed(() => {
 })
 
 // Logic for checking answers
-const isCorrectOption = (optionIndex: number) => {
+const isCorrectOption = (index: number) => {
   if (!currentQuestion.value || !currentQuestion.value.options) return false
-  
-  const correctAnswers = Array.isArray(currentQuestion.value.correctAnswer) 
-    ? currentQuestion.value.correctAnswer 
-    : [currentQuestion.value.correctAnswer]
-  
-  return correctAnswers.includes(String(optionIndex)) || 
-         correctAnswers.includes(currentQuestion.value.options[optionIndex])
+  return currentQuestion.value.options[index] === currentQuestion.value.correctAnswer
 }
 
 const isCorrectAnswer = computed(() => {
   if (!currentQuestion.value) return false
   
-  const correctAnswers = Array.isArray(currentQuestion.value.correctAnswer) 
-    ? currentQuestion.value.correctAnswer 
-    : [currentQuestion.value.correctAnswer]
-  
   switch (currentQuestion.value.type) {
     case 'multiple-choice':
-      return isCorrectOption(selectedOption.value)
-    
+      return selectedOption.value !== -1 && 
+        currentQuestion.value.options?.[selectedOption.value] === currentQuestion.value.correctAnswer
     case 'fill-blanks':
-      return correctAnswers.some(answer => 
-        blankAnswer.value.trim().toLowerCase() === answer.toLowerCase()
-      )
-    
+      return blankAnswer.value.toLowerCase().trim() === (currentQuestion.value.correctAnswer as string).toLowerCase().trim()
     case 'error-correction':
-      return correctAnswers.some(answer => 
-        correctionAnswer.value.trim().toLowerCase() === answer.toLowerCase()
-      )
-    
+      return correctionAnswer.value.toLowerCase().trim() === (currentQuestion.value.correctAnswer as string).toLowerCase().trim()
     case 'sentence-transformation':
-      return correctAnswers.some(answer => 
-        transformationAnswer.value.trim().toLowerCase() === answer.toLowerCase()
-      )
-    
+      return transformationAnswer.value.toLowerCase().trim() === (currentQuestion.value.correctAnswer as string).toLowerCase().trim()
     default:
       return false
   }
@@ -309,23 +288,14 @@ const isCorrectAnswer = computed(() => {
 const formattedCorrectAnswer = computed(() => {
   if (!currentQuestion.value) return ''
   
-  const correctAnswer = Array.isArray(currentQuestion.value.correctAnswer) 
-    ? currentQuestion.value.correctAnswer[0] 
-    : currentQuestion.value.correctAnswer
-  
   if (currentQuestion.value.type === 'multiple-choice' && currentQuestion.value.options) {
-    // If the correct answer is a number (index), return the option text
-    if (/^\d+$/.test(correctAnswer)) {
-      const index = parseInt(correctAnswer)
-      return index >= 0 && index < currentQuestion.value.options.length 
-        ? currentQuestion.value.options[index] 
-        : correctAnswer
-    }
-    // Otherwise, return the answer text
-    return correctAnswer
+    const correctIndex = currentQuestion.value.options.findIndex(
+      option => option === currentQuestion.value?.correctAnswer
+    )
+    return correctIndex !== -1 ? currentQuestion.value.options[correctIndex] : ''
   }
   
-  return correctAnswer
+  return currentQuestion.value.correctAnswer as string
 })
 
 const canCheckAnswer = computed(() => {

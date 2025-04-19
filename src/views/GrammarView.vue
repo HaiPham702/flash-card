@@ -239,12 +239,28 @@ const grammarStore = useGrammarStore()
 
 const activeTab = ref('learning-path')
 const searchQuery = ref('')
-const selectedDay = ref(null)
+const selectedDay = ref<{
+  id: number;
+  title: string;
+  topics: string[];
+  level: "basic" | "intermediate" | "advanced" | "review";
+  explanation?: string;
+  examples: {
+    text: string;
+    translation: string;
+    explanation?: string;
+  }[];
+} | null>(null)
 const completedDays = ref<number[]>([])
 
 // Fetch grammar data from the store
 const grammarData = computed(() => grammarStore.grammarDays)
-const searchResults = ref([])
+const searchResults = ref<{
+  id: string;
+  title: string;
+  description: string;
+  type: 'day' | 'topic';
+}[]>([])
 const popularTopics = ref([
   { id: 'nouns', title: 'Danh từ', description: 'Các loại danh từ và cách sử dụng' },
   { id: 'verbs', title: 'Động từ', description: 'Thì, thể, cách chia động từ' },
@@ -313,10 +329,11 @@ const openDayDetails = (dayId: number) => {
   }
 }
 
-const openGrammarTopic = (topicId: string) => {
-  console.log('Opening grammar topic:', topicId)
-  // Navigate to the detailed grammar topic page
-  router.push(`/grammar/topic/${topicId}`)
+const openGrammarTopic = (id: string) => {
+  const dayId = parseInt(id.replace('day-', ''))
+  if (!isNaN(dayId)) {
+    openDayDetails(dayId)
+  }
 }
 
 const openPracticeCategory = (categoryId: string) => {
