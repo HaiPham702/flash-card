@@ -27,6 +27,7 @@ const handleLogout = () => {
     <div class="nav-links">
       <template v-if="authStore.isAuthenticated">
         <router-link to="/decks">Bộ thẻ</router-link>
+        <router-link to="/grammar">Ngữ pháp</router-link>
         <router-link to="/speaking">Speaking</router-link>
         <router-link to="/writing">Writing</router-link>
         <router-link to="/attendance">Điểm danh</router-link>

@@ -67,6 +67,37 @@ const router = createRouter({
       meta: {
         title: 'IELTS Writing Practice'
       }
+    },
+    // Grammar feature routes
+    {
+      path: '/grammar',
+      name: 'grammar',
+      component: () => import('../views/GrammarView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/grammar/topic/:topicId',
+      name: 'grammar-topic',
+      component: () => import('../views/GrammarTopicView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/grammar/practice/:categoryId',
+      name: 'grammar-practice-category',
+      component: () => import('../views/GrammarPracticeView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/grammar/practice/day/:dayId',
+      name: 'grammar-practice-day',
+      component: () => import('../views/GrammarPracticeView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/grammar/flashcards/:dayId',
+      name: 'grammar-flashcards',
+      component: () => import('../views/GrammarFlashcardsView.vue'),
+      meta: { requiresAuth: true }
     }
   ]
 })
