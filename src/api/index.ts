@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.MODE == "development" ? 'http://localhost:4000/api' : 'https://flash-card-backend-w9oj.onrender.com/api';
+const API_URL = import.meta.env.MODE == "development" ? 'http://localhost:4000/api' : 'https://flash-card-backend-production-e932.up.railway.app/api';
 import router from '../router';
 import { useNotificationStore } from '../stores/notification';
 
