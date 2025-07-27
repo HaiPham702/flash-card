@@ -292,8 +292,10 @@
   </div>
 </template>
 
+
 <script>
 import { ref, onMounted, computed } from 'vue'
+import { apiRequest } from '../api/index'
 
 export default {
   name: 'TelegramManagementView',
@@ -341,29 +343,19 @@ export default {
       return true
     })
 
-    // API helper
-    const apiCall = async (url, options = {}) => {
-      const token = localStorage.getItem('token')
-      const response = await fetch(`/api/telegram${url}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-          ...options.headers
-        },
-        ...options
-      })
-      
-      if (!response.ok) {
-        throw new Error(`API Error: ${response.statusText}`)
-      }
-      
-      return response.json()
+    // Import apiRequest
+    // ...existing code...
+
+    // Helper for Telegram API
+    const telegramApiRequest = async (endpoint, method = 'GET', data = null, customHeaders = {}) => {
+      // All Telegram API endpoints are prefixed with /telegram
+      return apiRequest(`/telegram${endpoint}`, method, data, customHeaders)
     }
 
     // Methods
     const loadStats = async () => {
       try {
-        const response = await apiCall('/stats')
+        const response = await telegramApiRequest('/stats')
         stats.value = response.stats
       } catch (error) {
         console.error('Lỗi load stats:', error)
@@ -373,7 +365,7 @@ export default {
 
     const loadUsers = async () => {
       try {
-        const response = await apiCall('/users')
+        const response = await telegramApiRequest('/users')
         users.value = response.users
       } catch (error) {
         console.error('Lỗi load users:', error)
@@ -383,7 +375,7 @@ export default {
 
     const loadSchedule = async () => {
       try {
-        const response = await apiCall('/schedule')
+        const response = await telegramApiRequest('/schedule')
         scheduleConfig.value = response.schedule
       } catch (error) {
         console.error('Lỗi load schedule:', error)
@@ -394,17 +386,12 @@ export default {
     const toggleTimeSlot = async (timeLabel, enabled) => {
       try {
         loading.value = true
-        await apiCall('/schedule/toggle', {
-          method: 'POST',
-          body: JSON.stringify({ timeLabel, enabled })
-        })
-        
+        await telegramApiRequest('/schedule/toggle', 'POST', { timeLabel, enabled })
         // Cập nhật local state
         const schedule = scheduleConfig.value.find(s => s.label === timeLabel)
         if (schedule) {
           schedule.enabled = enabled
         }
-        
         alert(`Đã ${enabled ? 'bật' : 'tắt'} time slot ${timeLabel}`)
       } catch (error) {
         console.error('Lỗi toggle time slot:', error)
@@ -419,14 +406,9 @@ export default {
         alert('Vui lòng nhập đầy đủ thông tin')
         return
       }
-
       try {
         loading.value = true
-        await apiCall('/schedule/add', {
-          method: 'POST',
-          body: JSON.stringify(newTimeSlot.value)
-        })
-        
+        await telegramApiRequest('/schedule/add', 'POST', newTimeSlot.value)
         showAddTimeSlot.value = false
         newTimeSlot.value = { label: '', time: '' }
         await loadSchedule()
@@ -443,13 +425,9 @@ export default {
       if (!confirm(`Bạn có chắc muốn xóa time slot "${timeLabel}"?`)) {
         return
       }
-
       try {
         loading.value = true
-        await apiCall(`/schedule/${encodeURIComponent(timeLabel)}`, {
-          method: 'DELETE'
-        })
-        
+        await telegramApiRequest(`/schedule/${encodeURIComponent(timeLabel)}`, 'DELETE')
         await loadSchedule()
         alert(`Đã xóa time slot ${timeLabel}`)
       } catch (error) {
@@ -464,13 +442,9 @@ export default {
       if (!confirm('Gửi flashcard ngay cho tất cả users?')) {
         return
       }
-
       try {
         loading.value = true
-        const response = await apiCall('/send-daily-notifications', {
-          method: 'POST'
-        })
-        
+        const response = await telegramApiRequest('/send-daily-notifications', 'POST')
         alert(`Hoàn thành! Gửi thành công: ${response.result?.success || 0}, Thất bại: ${response.result?.failed || 0}`)
       } catch (error) {
         console.error('Lỗi gửi thông báo:', error)
@@ -483,8 +457,7 @@ export default {
     const testBot = async () => {
       try {
         loading.value = true
-        const response = await apiCall('/test')
-        
+        const response = await telegramApiRequest('/test')
         if (response.success) {
           alert(`✅ Bot hoạt động bình thường!\nBot: ${response.botInfo?.first_name}\nUsername: @${response.botInfo?.username}`)
         } else {
@@ -501,10 +474,7 @@ export default {
     const syncUsers = async () => {
       try {
         loading.value = true
-        const response = await apiCall('/sync-users', {
-          method: 'POST'
-        })
-        
+        const response = await telegramApiRequest('/sync-users', 'POST')
         await loadUsers()
         await loadStats()
         alert(`Đã đồng bộ ${response.syncedUsers} users từ Telegram`)
@@ -520,13 +490,9 @@ export default {
       if (!confirm(`Gửi flashcard ngẫu nhiên cho ${userName}?`)) {
         return
       }
-
       try {
         loading.value = true
-        await apiCall(`/send-card/${chatId}`, {
-          method: 'POST'
-        })
-        
+        await telegramApiRequest(`/send-card/${chatId}`, 'POST')
         alert(`Đã gửi flashcard cho ${userName}`)
       } catch (error) {
         console.error('Lỗi gửi card:', error)
@@ -544,12 +510,7 @@ export default {
           message: broadcast.value.message,
           userIds: broadcast.value.target === 'selected' ? broadcast.value.selectedUsers : null
         }
-
-        const response = await apiCall('/broadcast', {
-          method: 'POST',
-          body: JSON.stringify(payload)
-        })
-        
+        const response = await telegramApiRequest('/broadcast', 'POST', payload)
         showBroadcast.value = false
         broadcast.value = {
           type: 'card',
@@ -557,7 +518,6 @@ export default {
           target: 'all',
           selectedUsers: []
         }
-        
         alert(`Hoàn thành broadcast! Thành công: ${response.result.success}, Thất bại: ${response.result.failed}`)
       } catch (error) {
         console.error('Lỗi broadcast:', error)
