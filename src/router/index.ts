@@ -98,6 +98,12 @@ const router = createRouter({
       name: 'grammar-flashcards',
       component: () => import('../views/GrammarFlashcardsView.vue'),
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/telegram',
+      name: 'telegram-management',
+      component: () => import('../views/TelegramManagementView.vue'),
+      meta: { requiresAuth: true }
     }
   ]
 })

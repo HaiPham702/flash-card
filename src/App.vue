@@ -31,6 +31,7 @@ const handleLogout = () => {
         <router-link to="/speaking">Speaking</router-link>
         <router-link to="/writing">Writing</router-link>
         <router-link to="/attendance">Điểm danh</router-link>
+        <router-link to="/telegram">🤖 Telegram Bot</router-link>
         <div class="user-menu">
           <span class="user-name">{{ authStore.currentUser?.name }}</span>
           <button @click="handleLogout" class="logout-button">
