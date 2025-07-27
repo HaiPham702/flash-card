@@ -301,7 +301,7 @@ export default {
   name: 'TelegramManagementView',
   setup() {
     // Reactive data
-    const activeTab = ref('schedule')
+    const activeTab = ref('users')
     const loading = ref(false)
     const stats = ref({
       totalTelegramUsers: 0,
@@ -327,9 +327,9 @@ export default {
 
     // Tabs configuration
     const tabs = ref([
+        { key: 'users', label: 'Người Dùng', icon: '👥' },
+        { key: 'actions', label: 'Thao Tác', icon: '🚀' },
       { key: 'schedule', label: 'Lịch Gửi', icon: '⏰' },
-      { key: 'users', label: 'Người Dùng', icon: '👥' },
-      { key: 'actions', label: 'Thao Tác', icon: '🚀' }
     ])
 
     // Computed
