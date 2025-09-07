@@ -6,7 +6,7 @@ import { resolve } from 'path';
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '',
+  base: '/flash-card/',
   plugins: [
     vue(),
   ],
