@@ -43,7 +43,7 @@ export const useDeckStore = defineStore('deck', () => {
     const isLoading = ref(false)
     const error = ref<string | null>(null)
     import.meta.env.VITE_API_URL
-    const API_URL = import.meta.env.MODE == "development" ? 'http://localhost:4000/api' : 'https://flash-card-backend-w9oj.onrender.com/api'
+    const API_URL = import.meta.env.MODE == "development" ? 'http://localhost:4000/api' : 'https://flash-card-backend-x0dz.onrender.com/api'
 
     // Helper to get auth headers
     const getAuthHeaders = () => {

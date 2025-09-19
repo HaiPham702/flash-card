@@ -2,7 +2,7 @@ import type { Card, Deck } from '@/stores/deck'
 import { apiRequest } from './index'
 import axios from 'axios'
 
-const API_URL = import.meta.env.MODE == "development" ? 'http://localhost:4000/api' : 'https://flash-card-backend-w9oj.onrender.com/api'
+const API_URL = import.meta.env.MODE == "development" ? 'http://localhost:4000/api' : 'https://flash-card-backend-x0dz.onrender.com/api'
 
 // Helper to get auth headers
 const getAuthHeaders = () => {
