@@ -32,6 +32,7 @@ export interface Deck {
     dueCards: number
     cards: Card[]
     order?: number
+    notificationPriority?: boolean
     creator: User
     modifier: User
     createdAt: Date
@@ -303,6 +304,29 @@ export const useDeckStore = defineStore('deck', () => {
         }
     }
 
+    // Update notification priority
+    async function updateNotificationPriority(deckId: any, notificationPriority: boolean) {
+        isLoading.value = true
+        error.value = null
+        try {
+            const updatedDeck = await api.updateDeckNotificationPriority(deckId, notificationPriority)
+            const index = decks.value.findIndex(d => 
+                d._id?.toString() === deckId?.toString() || 
+                d.id?.toString() === deckId?.toString()
+            )
+            if (index !== -1) {
+                decks.value[index] = updatedDeck
+            }
+            return updatedDeck
+        } catch (err) {
+            error.value = err instanceof Error ? err.message : 'Failed to update notification priority'
+            console.error('Error updating notification priority:', err)
+            throw err
+        } finally {
+            isLoading.value = false
+        }
+    }
+
     // Initialize store
     fetchDecks()
 
@@ -322,6 +346,7 @@ export const useDeckStore = defineStore('deck', () => {
         updateCardReview,
         fetchDeckById,
         reorderCards,
-        reorderDecks
+        reorderDecks,
+        updateNotificationPriority
     }
 }) 

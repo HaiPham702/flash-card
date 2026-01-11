@@ -77,4 +77,19 @@ export async function reorderDecks(deckOrders: { id: string, order: number }[]) 
         console.error('API: Error reordering decks:', error);
         throw error;
     }
+}
+
+export async function updateDeckNotificationPriority(deckId: string, notificationPriority: boolean) {
+    try {
+        console.log('API: Updating notification priority:', { deckId, notificationPriority });
+        const response = await axios.patch(`${API_URL}/decks/${deckId}/notification-priority`, 
+            { notificationPriority }, 
+            { headers: getAuthHeaders() }
+        );
+        console.log('API: Received response:', response.data);
+        return response.data;
+    } catch (error) {
+        console.error('API: Error updating notification priority:', error);
+        throw error;
+    }
 } 
