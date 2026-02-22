@@ -57,6 +57,17 @@
                   <i class="fas fa-edit"></i> Chỉnh sửa
                 </router-link>
               </div>
+              <div class="deck-priority">
+                <button 
+                  @click="toggleNotificationPriority(element)" 
+                  :class="['priority-button', { active: element.notificationPriority }]"
+                  :disabled="isLoading"
+                  :title="element.notificationPriority ? 'Bỏ ưu tiên push thông báo' : 'Ưu tiên push thông báo'"
+                >
+                  <i :class="element.notificationPriority ? 'fas fa-bell' : 'far fa-bell'"></i>
+                  <span>{{ element.notificationPriority ? 'Đã ưu tiên' : 'Ưu tiên push' }}</span>
+                </button>
+              </div>
             </div>
           </template>
         </draggable>
@@ -200,6 +211,21 @@ const onDragEnd = async (event: any, monthKey: string) => {
     await store.reorderDecks(deckOrders);
   } catch (error) {
     console.error('Error reordering decks:', error);
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+const toggleNotificationPriority = async (deck: any) => {
+  const deckId = deck._id || deck.id;
+  const newPriority = !deck.notificationPriority;
+  
+  isLoading.value = true;
+  try {
+    await store.updateNotificationPriority(deckId, newPriority);
+  } catch (error) {
+    console.error('Error updating notification priority:', error);
+    alert('Có lỗi xảy ra khi cập nhật ưu tiên push thông báo');
   } finally {
     isLoading.value = false;
   }
@@ -441,6 +467,48 @@ const onDragEnd = async (event: any, monthKey: string) => {
 .deck-meta i {
   color: #6366f1;
   margin-right: 0.25rem;
+}
+
+.deck-priority {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.priority-button {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid #d1d5db;
+  background-color: #f9fafb;
+  color: #6b7280;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+}
+
+.priority-button:hover:not(:disabled) {
+  background-color: #f3f4f6;
+  border-color: #6366f1;
+}
+
+.priority-button.active {
+  background-color: #6366f1;
+  color: white;
+  border-color: #6366f1;
+}
+
+.priority-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.priority-button i {
+  font-size: 0.875rem;
 }
 
 @keyframes spin {
