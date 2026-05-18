@@ -34,7 +34,7 @@ const handleLogout = () => {
         <router-link :to="buildLocation('weekly-practice')">Weekly Tracker</router-link>
         <router-link :to="buildLocation('attendance')">Điểm danh</router-link>
         <router-link :to="buildLocation('telegram')">🤖 Telegram Bot</router-link>
-        <router-link v-if="authStore.currentUser?.role === 'admin'" :to="buildLocation('weekly-practice-admin')">
+        <router-link :to="buildLocation('weekly-practice-admin')">
           Practice Admin
         </router-link>
         <div class="user-menu">
