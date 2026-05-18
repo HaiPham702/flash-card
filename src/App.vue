@@ -1,14 +1,51 @@
 <script setup lang="ts">
 import { useAuthStore } from './stores/auth'
-import { onMounted } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import Notifications from './components/Notifications.vue'
 import { useNav, buildLocation } from './router/nav'
 
 const authStore = useAuthStore()
 const { goTo } = useNav()
+const navbarRef = ref<HTMLElement | null>(null)
+
+const closeSubmenus = () => {
+  navbarRef.value?.querySelectorAll<HTMLDetailsElement>('.nav-menu[open]').forEach((menu) => {
+    menu.open = false
+  })
+}
+
+const handleDocumentClick = (event: MouseEvent) => {
+  if (!navbarRef.value?.contains(event.target as Node)) {
+    closeSubmenus()
+  }
+}
+
+const handleDocumentKeydown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape') {
+    closeSubmenus()
+  }
+}
+
+const handleMenuToggle = (event: Event) => {
+  const currentMenu = event.currentTarget as HTMLDetailsElement
+  if (!currentMenu.open) return
+
+  navbarRef.value?.querySelectorAll<HTMLDetailsElement>('.nav-menu[open]').forEach((menu) => {
+    if (menu !== currentMenu) {
+      menu.open = false
+    }
+  })
+}
 
 onMounted(() => {
   authStore.initializeAuth()
+  document.addEventListener('click', handleDocumentClick)
+  document.addEventListener('keydown', handleDocumentKeydown)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleDocumentClick)
+  document.removeEventListener('keydown', handleDocumentKeydown)
 })
 
 const handleLogout = () => {
@@ -20,7 +57,7 @@ const handleLogout = () => {
 <template>
   <Notifications />
 
-  <nav class="navbar">
+  <nav ref="navbarRef" class="navbar">
     <router-link :to="buildLocation('decks')" class="logo">
       Flash Card
     </router-link>
@@ -32,58 +69,58 @@ const handleLogout = () => {
           Bộ thẻ
         </router-link>
 
-        <details class="nav-menu">
+        <details class="nav-menu" @toggle="handleMenuToggle">
           <summary>
             <i class="fas fa-book-open"></i>
             Luyện IELTS
             <i class="fas fa-chevron-down chevron"></i>
           </summary>
           <div class="submenu">
-            <router-link :to="buildLocation('grammar')">
+            <router-link :to="buildLocation('grammar')" @click="closeSubmenus">
               <i class="fas fa-spell-check"></i>
               Ngữ pháp
             </router-link>
-            <router-link :to="buildLocation('speaking')">
+            <router-link :to="buildLocation('speaking')" @click="closeSubmenus">
               <i class="fas fa-microphone"></i>
               Speaking
             </router-link>
-            <router-link :to="buildLocation('writing')">
+            <router-link :to="buildLocation('writing')" @click="closeSubmenus">
               <i class="fas fa-pen-nib"></i>
               Writing
             </router-link>
           </div>
         </details>
 
-        <details class="nav-menu">
+        <details class="nav-menu" @toggle="handleMenuToggle">
           <summary>
             <i class="fas fa-chart-line"></i>
             Theo dõi
             <i class="fas fa-chevron-down chevron"></i>
           </summary>
           <div class="submenu">
-            <router-link :to="buildLocation('weekly-practice')">
+            <router-link :to="buildLocation('weekly-practice')" @click="closeSubmenus">
               <i class="fas fa-list-check"></i>
               Weekly Tracker
             </router-link>
-            <router-link :to="buildLocation('attendance')">
+            <router-link :to="buildLocation('attendance')" @click="closeSubmenus">
               <i class="fas fa-calendar-check"></i>
               Điểm danh
             </router-link>
           </div>
         </details>
 
-        <details class="nav-menu">
+        <details class="nav-menu" @toggle="handleMenuToggle">
           <summary>
             <i class="fas fa-screwdriver-wrench"></i>
             Công cụ
             <i class="fas fa-chevron-down chevron"></i>
           </summary>
           <div class="submenu submenu-right">
-            <router-link :to="buildLocation('telegram')">
+            <router-link :to="buildLocation('telegram')" @click="closeSubmenus">
               <i class="fas fa-robot"></i>
               Telegram Bot
             </router-link>
-            <router-link :to="buildLocation('weekly-practice-admin')">
+            <router-link :to="buildLocation('weekly-practice-admin')" @click="closeSubmenus">
               <i class="fas fa-table-columns"></i>
               Practice Admin
             </router-link>
