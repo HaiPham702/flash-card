@@ -9,10 +9,10 @@
         <button @click="shuffleCards" class="shuffle-button">
           <i class="fas fa-random"></i> Trộn thẻ
         </button>
-        <router-link :to="'/test/' + deckId" class="test-button">
+        <router-link :to="buildLocation('test', { deckId })" class="test-button">
           <i class="fas fa-pencil-alt"></i> Làm bài kiểm tra
         </router-link>
-        <router-link :to="'/deck/' + deckId" class="edit-button">
+        <router-link :to="buildLocation('deck-detail', { id: deckId })" class="edit-button">
           <i class="fas fa-edit"></i> Chỉnh sửa bộ thẻ
         </router-link>
       </div>
@@ -115,7 +115,7 @@
             </div>
           </div>
           <div class="completion-actions">
-            <router-link :to="'/deck/' + deckId" class="back-button">
+            <router-link :to="buildLocation('deck-detail', { id: deckId })" class="back-button">
               <i class="fas fa-arrow-left"></i> Quay lại bộ thẻ
             </router-link>
 
@@ -126,16 +126,16 @@
 
     <div v-else class="error-state">
       <p>Không tìm thấy bộ thẻ này</p>
-      <router-link to="/" class="back-button">Quay lại trang chủ</router-link>
+      <router-link :to="buildLocation('decks')" class="back-button">Quay lại trang chủ</router-link>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
 import { useDeckStore } from '@/stores/deck'
 import { useAttendanceStore } from '../stores/attendance'
+import { useNav, buildLocation } from '@/router/nav'
 
 interface Card {
   _id: string
@@ -154,11 +154,10 @@ interface Deck {
   cards: Card[]
 }
 
-const route = useRoute()
-const router = useRouter()
+const { goTo, param } = useNav()
 const store = useDeckStore()
 const attendanceStore = useAttendanceStore()
-const deckId = route.params.deckId as string
+const deckId = param('deckId')
 
 const isLoading = ref(true)
 const deck = ref<Deck | null>(null)
@@ -246,13 +245,13 @@ const initStudy = async () => {
   try {
     const result = await store.fetchDeckById(deckId)
     if (!result) {
-      router.push('/')
+      goTo('decks')
       return
     }
     deck.value = result
   } catch (error) {
     console.error('Error fetching deck:', error)
-    router.push('/')
+    goTo('decks')
   } finally {
     isLoading.value = false
   }

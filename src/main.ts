@@ -34,7 +34,7 @@ app.config.errorHandler = (error: any, instance, info) => {
 
         // Log user out and redirect
         authStore.logout()
-        router.push('/login')
+        router.push({ path: '/', query: { view: 'login' } })
     } else {
         console.error('Error:', error)
         notificationStore.error(error.message || 'Đã xảy ra lỗi')

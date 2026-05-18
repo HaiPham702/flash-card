@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { useNav, buildLocation } from '@/router/nav'
 
-const router = useRouter()
+const { goTo } = useNav()
 const authStore = useAuthStore()
 
 const name = ref('')
@@ -20,7 +20,7 @@ const handleRegister = async () => {
         }
 
         await authStore.register(name.value, email.value, password.value)
-        router.push('/')
+        goTo('decks')
     } catch (err) {
         error.value = 'Đăng ký không thành công. Vui lòng thử lại.'
     }
@@ -57,7 +57,7 @@ const handleRegister = async () => {
                     Đăng ký
                 </button>
                 <div class="login-link">
-                    Đã có tài khoản? <router-link to="/login">Đăng nhập</router-link>
+                    Đã có tài khoản? <router-link :to="buildLocation('login')">Đăng nhập</router-link>
                 </div>
             </form>
         </div>

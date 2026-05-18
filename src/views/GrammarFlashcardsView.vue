@@ -125,8 +125,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
 import { useGrammarStore } from '@/stores/grammar'
+import { useNav, buildLocation } from '@/router/nav'
 
 interface FlashCard {
   id: string
@@ -139,8 +139,7 @@ interface FlashCard {
   difficulty?: 'easy' | 'medium' | 'hard'
 }
 
-const route = useRoute()
-const router = useRouter()
+const { param } = useNav()
 const grammarStore = useGrammarStore()
 
 const loading = ref(true)
@@ -149,10 +148,10 @@ const currentIndex = ref(0)
 const isFlipped = ref(false)
 
 // Determine the source of flashcards
-const dayId = computed(() => parseInt(route.params.dayId as string))
+const dayId = computed(() => parseInt(param('dayId')))
 
 // Determine back link
-const backLink = computed(() => `/grammar/topic/day-${dayId.value}`)
+const backLink = computed(() => buildLocation('grammar-topic', { topicId: `day-${dayId.value}` }))
 
 // Flashcards title and description
 const title = computed(() => {

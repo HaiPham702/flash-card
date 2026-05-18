@@ -5,7 +5,7 @@
         <i class="fas fa-microphone"></i>
         Speaking Topics Hôm Nay
       </h3>
-      <router-link to="/speaking" class="view-all-link">
+      <router-link :to="buildLocation('speaking')" class="view-all-link">
         Xem chi tiết
         <i class="fas fa-arrow-right"></i>
       </router-link>
@@ -60,6 +60,7 @@
 import { onMounted, ref } from 'vue'
 import { useSpeakingStore } from '@/stores/speaking'
 import type { SpeakingTopic } from '@/types/speaking'
+import { buildLocation } from '@/router/nav'
 
 const store = useSpeakingStore()
 const { currentTopic: currentTopicStore, isLoading: storeLoading, error, fetchTodayTopic, generateNewTopic } = store

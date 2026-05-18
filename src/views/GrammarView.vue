@@ -232,9 +232,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useGrammarStore } from '@/stores/grammar'
-import { useRouter } from 'vue-router'
+import { useNav } from '@/router/nav'
 
-const router = useRouter()
+const { goTo } = useNav()
 const grammarStore = useGrammarStore()
 
 const activeTab = ref('learning-path')
@@ -339,19 +339,17 @@ const openGrammarTopic = (id: string) => {
 const openPracticeCategory = (categoryId: string) => {
   console.log('Opening practice category:', categoryId)
   // Navigate to the practice category page
-  router.push(`/grammar/practice/${categoryId}`)
+  goTo('grammar-practice', { categoryId })
 }
 
 const startPractice = (dayId: number) => {
   console.log('Starting practice for day:', dayId)
-  // Navigate to the practice page for this day
-  router.push(`/grammar/practice/day/${dayId}`)
+  goTo('grammar-practice', { dayId })
 }
 
 const studyFlashcards = (dayId: number) => {
   console.log('Studying flashcards for day:', dayId)
-  // Navigate to the flashcards page for this day
-  router.push(`/grammar/flashcards/${dayId}`)
+  goTo('grammar-flashcards', { dayId })
 }
 
 const isCompleted = (dayId: number) => {

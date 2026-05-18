@@ -27,7 +27,7 @@
           <!-- <button @click="shuffleQuestions" class="shuffle-button">
             <i class="fas fa-random"></i> Trộn câu hỏi
           </button> -->
-          <router-link :to="'/deck/' + deckId" class="back-button">
+          <router-link :to="buildLocation('deck-detail', { id: deckId })" class="back-button">
             <i class="fa-solid fa-backward-step"></i> Quay lại bộ thẻ
           </router-link>
         </div>
@@ -107,7 +107,7 @@
           <button @click="restartTest" class="restart-button">
             Làm lại bài kiểm tra
           </button>
-          <router-link :to="'/deck/' + deckId" class="back-button">
+          <router-link :to="buildLocation('deck-detail', { id: deckId })" class="back-button">
             Quay lại bộ thẻ
           </router-link>
         </div>
@@ -115,7 +115,7 @@
 
       <div v-else class="error-state">
         <p>Không tìm thấy bộ thẻ này</p>
-        <router-link to="/" class="back-button">Quay lại trang chủ</router-link>
+        <router-link :to="buildLocation('decks')" class="back-button">Quay lại trang chủ</router-link>
       </div>
     </div>
   </div>
@@ -123,8 +123,8 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
 import { useDeckStore } from '@/stores/deck'
+import { useNav, buildLocation } from '@/router/nav'
 
 interface Card {
   _id: any
@@ -145,10 +145,9 @@ interface Deck {
   cards: Card[]
 }
 
-const route = useRoute()
-const router = useRouter()
+const { goTo, param } = useNav()
 const store = useDeckStore()
-const deckId = route.params.deckId
+const deckId = param('deckId')
 
 const isLoading = ref(true)
 const deck = ref<Deck | null>(null)
@@ -184,7 +183,7 @@ const initTest = async () => {
   try {
     const result = await store.fetchDeckById(deckId)
     if (!result || !result._id) {
-      router.push('/')
+      goTo('decks')
       return
     }
     deck.value = result
@@ -201,7 +200,7 @@ const initTest = async () => {
     }
   } catch (error) {
     console.error('Error fetching deck:', error)
-    router.push('/')
+    goTo('decks')
   } finally {
     isLoading.value = false
   }

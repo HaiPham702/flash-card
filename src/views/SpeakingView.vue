@@ -2,7 +2,7 @@
   <div class="speaking-view">
     <div class="header">
       <h1>IELTS Speaking Topics</h1>
-      <router-link to="/" class="back-button">
+      <router-link :to="buildLocation('decks')" class="back-button">
         <i class="fas fa-arrow-left"></i> Quay lại trang chủ
       </router-link>
     </div>
@@ -13,6 +13,7 @@
 
 <script setup lang="ts">
 import SpeakingTopic from '@/components/SpeakingTopic.vue'
+import { buildLocation } from '@/router/nav'
 </script>
 
 <style scoped>

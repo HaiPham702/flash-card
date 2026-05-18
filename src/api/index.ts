@@ -49,7 +49,7 @@ export async function apiRequest(
         notificationStore.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
 
         // Redirect to login
-        router.push('/login');
+        router.push({ path: '/', query: { view: 'login' } });
         throw new Error('Unauthorized: Please log in again');
     }
 

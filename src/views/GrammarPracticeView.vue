@@ -177,12 +177,11 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
 import { useGrammarStore } from '@/stores/grammar'
 import type { PracticeQuestion } from '@/types/grammar'
+import { useNav, buildLocation } from '@/router/nav'
 
-const route = useRoute()
-const router = useRouter()
+const { param } = useNav()
 const grammarStore = useGrammarStore()
 
 const loading = ref(true)
@@ -197,20 +196,20 @@ const correctAnswers = ref(0)
 const practiceFinished = ref(false)
 
 // Determine the source of practice questions (day or category)
-const isDayPractice = computed(() => route.name === 'grammar-practice-day')
+const isDayPractice = computed(() => Boolean(param('dayId')))
 const sourceId = computed(() => {
   if (isDayPractice.value) {
-    return parseInt(route.params.dayId as string)
+    return parseInt(param('dayId'))
   }
-  return route.params.categoryId as string
+  return param('categoryId')
 })
 
 // Determine back link
 const backLink = computed(() => {
   if (isDayPractice.value) {
-    return `/grammar/topic/day-${sourceId.value}`
+    return buildLocation('grammar-topic', { topicId: `day-${sourceId.value}` })
   }
-  return '/grammar'
+  return buildLocation('grammar')
 })
 
 // Practice title and description

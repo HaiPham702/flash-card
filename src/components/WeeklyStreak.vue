@@ -26,10 +26,10 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useRouter } from 'vue-router';
 import { useAttendanceStore } from '../stores/attendance';
+import { useNav } from '@/router/nav';
 
-const router = useRouter();
+const { goTo } = useNav();
 const store = useAttendanceStore();
 
 const weeklyAttendanceCount = computed(() => store.weeklyAttendanceCount);
@@ -95,7 +95,7 @@ const longestStreak = computed(() => {
 });
 
 const goToAttendance = () => {
-  router.push('/attendance');
+  goTo('attendance');
 };
 </script>
 

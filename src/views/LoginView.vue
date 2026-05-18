@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useNotificationStore } from '../stores/notification'
+import { useNav, buildLocation, type ViewName } from '@/router/nav'
 
-const router = useRouter()
+const { goTo, param } = useNav()
 const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
 
@@ -26,7 +26,8 @@ const handleLogin = async () => {
         isLoading.value = true
         await authStore.login(email.value, password.value)
         notificationStore.success('Đăng nhập thành công')
-        router.push('/')
+        const redirect = param('redirect') as ViewName
+        goTo(redirect || 'decks')
     } catch (err) {
         error.value = 'Email hoặc mật khẩu không chính xác'
         notificationStore.error('Email hoặc mật khẩu không chính xác')
@@ -59,7 +60,7 @@ const handleLogin = async () => {
                     <span v-else>Đăng nhập</span>
                 </button>
                 <div class="register-link">
-                    Chưa có tài khoản? <router-link to="/register">Đăng ký</router-link>
+                    Chưa có tài khoản? <router-link :to="buildLocation('register')">Đăng ký</router-link>
                 </div>
             </form>
         </div>

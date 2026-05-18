@@ -2,6 +2,7 @@
 import DailySpeakingCard from '@/components/DailySpeakingCard.vue'
 import WeeklyStreak from '@/components/WeeklyStreak.vue'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { buildLocation } from '@/router/nav'
 
 // Configurable target date - change this to any date you want to count down to
 const targetDateString = ref('2025-12-31T23:59:59')
@@ -62,7 +63,7 @@ const timeRemaining = computed(() => {
           </div>
         </div>
       </div>
-      <router-link to="/decks" class="cta-button">
+      <router-link :to="buildLocation('decks')" class="cta-button">
         Bắt đầu học ngay
       </router-link>
     </div>

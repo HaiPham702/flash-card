@@ -49,11 +49,11 @@
                 </div>
               </div>
               <div class="deck-actions">
-                <router-link :to="'/study/' + element._id" class="study-button">
+                <router-link :to="buildLocation('study', { deckId: element._id })" class="study-button">
                   <i class="fa-solid fa-play"></i>
                   Học ngay
                 </router-link>
-                <router-link :to="'/deck/' + element._id" class="edit-button">
+                <router-link :to="buildLocation('deck-detail', { id: element._id })" class="edit-button">
                   <i class="fas fa-edit"></i> Chỉnh sửa
                 </router-link>
               </div>
@@ -106,6 +106,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useDeckStore } from '@/stores/deck'
 import draggable from 'vuedraggable'
+import { buildLocation } from '@/router/nav'
 
 const store = useDeckStore()
 const showCreateDeckModal = ref(false)

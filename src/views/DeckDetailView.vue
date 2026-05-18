@@ -20,7 +20,7 @@
         </div>
       </div>
       <div class="header-actions">
-        <router-link :to="deck.cards.length > 0 ? '/study/' + deckId : ''" class="study-button"
+        <router-link :to="deck.cards.length > 0 ? buildLocation('study', { deckId }) : ''" class="study-button"
           :class="{ 'disabled': deck.cards.length === 0 }" @click.prevent="deck.cards.length === 0 ? null : null">
           <i class="fa-solid fa-play"></i>
           Học ngay
@@ -172,12 +172,12 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
 import { useDeckStore } from '@/stores/deck'
 import axios from 'axios'
 import { generateSuggestions } from '@/api/ai'
 import draggable from 'vuedraggable'
 import { useAuthStore } from '@/stores/auth'
+import { useNav, buildLocation } from '@/router/nav'
 
 
 interface Card {
@@ -193,13 +193,12 @@ interface Card {
   order?: number
 }
 
-const route = useRoute()
-const router = useRouter()
+const { goTo, param } = useNav()
 const store = useDeckStore()
 const authStore = useAuthStore()
 
 
-const deckId = route.params.id
+const deckId = param('id')
 
 const showAddCardModal = ref(false)
 const editingCard = ref<Card | null>(null)
@@ -372,7 +371,7 @@ const deleteCard = async (cardId: string) => {
 const deleteDeck = async () => {
   if (confirm('Bạn có chắc chắn muốn xóa toàn bộ bộ thẻ này? Hành động này không thể hoàn tác.')) {
     await store.deleteDeck(deckId)
-    router.push('/decks')
+    goTo('decks')
   }
 }
 

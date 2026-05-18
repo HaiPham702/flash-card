@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { RouterLink, RouterView, useRouter } from 'vue-router'
+import { RouterView } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import { onMounted } from 'vue'
 import Notifications from './components/Notifications.vue'
+import { useNav, buildLocation } from './router/nav'
 
-const router = useRouter()
 const authStore = useAuthStore()
+const { goTo } = useNav()
 
 onMounted(() => {
   authStore.initializeAuth()
@@ -13,7 +14,7 @@ onMounted(() => {
 
 const handleLogout = () => {
   authStore.logout()
-  router.push('/login')
+  goTo('login')
 }
 </script>
 
@@ -21,17 +22,21 @@ const handleLogout = () => {
   <Notifications />
 
   <nav class="navbar">
-    <router-link to="/" class="logo">
+    <router-link :to="buildLocation('decks')" class="logo">
       Flash Card
     </router-link>
     <div class="nav-links">
       <template v-if="authStore.isAuthenticated">
-        <router-link to="/decks">Bộ thẻ</router-link>
-        <router-link to="/grammar">Ngữ pháp</router-link>
-        <router-link to="/speaking">Speaking</router-link>
-        <router-link to="/writing">Writing</router-link>
-        <router-link to="/attendance">Điểm danh</router-link>
-        <router-link to="/telegram">🤖 Telegram Bot</router-link>
+        <router-link :to="buildLocation('decks')">Bộ thẻ</router-link>
+        <router-link :to="buildLocation('grammar')">Ngữ pháp</router-link>
+        <router-link :to="buildLocation('speaking')">Speaking</router-link>
+        <router-link :to="buildLocation('writing')">Writing</router-link>
+        <router-link :to="buildLocation('weekly-practice')">Weekly Tracker</router-link>
+        <router-link :to="buildLocation('attendance')">Điểm danh</router-link>
+        <router-link :to="buildLocation('telegram')">🤖 Telegram Bot</router-link>
+        <router-link v-if="authStore.currentUser?.role === 'admin'" :to="buildLocation('weekly-practice-admin')">
+          Practice Admin
+        </router-link>
         <div class="user-menu">
           <span class="user-name">{{ authStore.currentUser?.name }}</span>
           <button @click="handleLogout" class="logout-button">
@@ -40,7 +45,7 @@ const handleLogout = () => {
         </div>
       </template>
       <template v-else>
-        <router-link to="/login" class="login-button">
+        <router-link :to="buildLocation('login')" class="login-button">
           <div style="color: white;">
             Đăng nhập
           </div>

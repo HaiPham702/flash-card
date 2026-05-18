@@ -8,7 +8,7 @@
 
       <div v-else-if="topic" class="topic-content">
         <div class="topic-header">
-          <router-link to="/grammar" class="back-link">
+          <router-link :to="buildLocation('grammar')" class="back-link">
             <i class="fas fa-arrow-left"></i> Quay lại lộ trình
           </router-link>
           <h1>{{ topic.title }}</h1>
@@ -58,7 +58,7 @@
         <i class="fas fa-exclamation-triangle"></i>
         <h2>Không tìm thấy chủ đề</h2>
         <p>Chủ đề bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.</p>
-        <router-link to="/grammar" class="back-button">
+        <router-link :to="buildLocation('grammar')" class="back-button">
           Quay lại trang ngữ pháp
         </router-link>
       </div>
@@ -68,15 +68,14 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
 import { useGrammarStore } from '@/stores/grammar'
 import type { GrammarTopic, GrammarExample } from '@/types/grammar'
+import { useNav, buildLocation } from '@/router/nav'
 
-const route = useRoute()
-const router = useRouter()
+const { goTo, param } = useNav()
 const grammarStore = useGrammarStore()
 
-const topicId = computed(() => route.params.topicId as string)
+const topicId = computed(() => param('topicId'))
 const topic = ref<GrammarTopic | null>(null)
 const examples = ref<GrammarExample[]>([])
 const relatedTopics = ref<{id: string, title: string, description: string}[]>([])
@@ -155,23 +154,23 @@ onMounted(async () => {
 const startPractice = () => {
   if (topicId.value.startsWith('day-')) {
     const dayId = parseInt(topicId.value.replace('day-', ''))
-    router.push(`/grammar/practice/day/${dayId}`)
+    goTo('grammar-practice', { dayId })
   } else {
-    router.push(`/grammar/practice/topic/${topicId.value}`)
+    goTo('grammar-practice', { topicId: topicId.value })
   }
 }
 
 const studyFlashcards = () => {
   if (topicId.value.startsWith('day-')) {
     const dayId = parseInt(topicId.value.replace('day-', ''))
-    router.push(`/grammar/flashcards/${dayId}`)
+    goTo('grammar-flashcards', { dayId })
   } else {
-    router.push(`/grammar/flashcards/topic/${topicId.value}`)
+    goTo('grammar-flashcards', { topicId: topicId.value })
   }
 }
 
 const navigateToTopic = (id: string) => {
-  router.push(`/grammar/topic/${id}`)
+  goTo('grammar-topic', { topicId: id })
 }
 </script>
 
